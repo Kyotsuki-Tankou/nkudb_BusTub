@@ -41,9 +41,26 @@ template <typename T>
 void ORSet<T>::Merge(const ORSet<T> &other) {
   // TODO(student): Implement this
   //Find elements in A but in tomb of B
-  
+  std::vector<T> dir;
+  for(const auto &pair:elems.data)
+  {
+    if(other.tomb.get(pair.first)!=-1)
+    {
+      dir.push_back(pair.first);
+    }
+  }
+  for(const auto &elem:dir)
+  {
+    remove(elem.first);
+  }
   //Find elements in B and not in tomb of A
-  
+  for(const auto &pair:other.elems.data)
+  {
+    if(tomb.get(pair.first)==-1)
+    {
+      elems.put(pair.first,pair.second);
+    }
+  }
   //Merge tombs
   for(const auto &pair:other.tomb.data)
   {
