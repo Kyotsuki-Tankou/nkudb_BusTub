@@ -24,7 +24,7 @@ class KeyValueVector {
   void remove(const S &key) {
     auto it = std::find_if(data.begin(), data.end(), [&key](const auto &pair) { return pair.first == key; });
     if (it != data.end()) {
-      data.erase(it, it);
+      data.erase(it,it);
     }
   }
   void update(const S &key, const T &value) {
