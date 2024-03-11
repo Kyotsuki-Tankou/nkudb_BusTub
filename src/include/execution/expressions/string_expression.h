@@ -47,24 +47,18 @@ class StringExpression : public AbstractExpression {
 
   auto Compute(const std::string &val) const -> std::string {
     std::string result = val;
-    for (size_t i=0;i<result.length();i++) 
-    {
-      if(expr_type_==StringExpressionType::Lower) 
-      {
-        if (result[i]>='A'&&result[i]<='Z') 
-        {
-          result[i]+=('a'-'A');
+    for (size_t i = 0; i < result.length(); i++) {
+      if (expr_type_ == StringExpressionType::Lower) {
+        if (result[i] >= 'A' && result[i] <= 'Z') {
+          result[i] += ('a' - 'A');
         }
-      } 
-      else if (expr_type_==StringExpressionType::Upper) 
-      {
-        if (result[i]>='a'&&result[i]<='z') 
-        {
-          result[i]-=('a'-'A');
+      } else if (expr_type_ == StringExpressionType::Upper) {
+        if (result[i] >= 'a' && result[i] <= 'z') {
+          result[i] -= ('a' - 'A');
         }
       }
     }
-      return result;
+    return result;
   }
 
   auto Evaluate(const Tuple *tuple, const Schema &schema) const -> Value override {
