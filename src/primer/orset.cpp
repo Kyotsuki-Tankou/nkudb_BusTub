@@ -10,8 +10,8 @@ namespace bustub {
 template <typename T>
 auto ORSet<T>::Contains(const T &elem) const -> bool {
   // TODO(student): Implement this
-  return elems.get(elem)!=-1;
   // throw NotImplementedException("ORSet<T>::Contains is not implemented");
+  return elems.get(elem)!=-1;
 }
 
 template <typename T>
@@ -34,7 +34,7 @@ void ORSet<T>::Remove(const T &elem) {
     elems.remove(pair.first);
     tomb.put(pair.first,pair.second);
   }
-  //throw NotImplementedException("ORSet<T>::Remove is not implemented");
+  // throw NotImplementedException("ORSet<T>::Remove is not implemented");
 }
 
 template <typename T>
@@ -51,7 +51,7 @@ void ORSet<T>::Merge(const ORSet<T> &other) {
   }
   for(const auto &elem:dir)
   {
-    remove(elem.first);
+    remove(elem);
   }
   //Find elements in B and not in tomb of A
   for(const auto &pair:other.elems.data)
@@ -66,7 +66,7 @@ void ORSet<T>::Merge(const ORSet<T> &other) {
   {
     tomb.put(pair.first,pair.second);
   }
-  //throw NotImplementedException("ORSet<T>::Merge is not implemented");
+  // throw NotImplementedException("ORSet<T>::Merge is not implemented");
 }
 
 template <typename T>
