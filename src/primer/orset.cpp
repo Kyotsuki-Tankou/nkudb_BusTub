@@ -19,9 +19,9 @@ template <typename T>
 void ORSet<T>::Add(const T &elem, uid_t uid) {
   // TODO(student): Implement this
   if (std::find_if(tomb.data.begin(), tomb.data.end(),
-                     [&elem](const std::pair<T, uid_t>& pair) { return pair.first == elem; })== tomb.data.end()) {
-        elems.data.push_back(std::make_pair(elem, uid));
-    }
+                   [&elem](const std::pair<T, uid_t> &pair) { return pair.first == elem; }) == tomb.data.end()) {
+    elems.data.push_back(std::make_pair(elem, uid));
+  }
   // throw NotImplementedException("ORSet<T>::Add is not implemented");
 }
 
@@ -42,20 +42,29 @@ template <typename T>
 void ORSet<T>::Merge(const ORSet<T> &other) {
   // TODO(student): Implement this
   // Find elements in A but in tomb of B
-    for (const auto &pair : other.elems.data) {
-      if (std::find_if(tomb.data.begin(), tomb.data.end(), [&pair](const std::pair<T, uid_t> &tombPair) {
-            return tombPair.first == pair.first;
-          }) == tomb.data.end()) {
-        elems.data.push_back(pair);
-      }
+  for (const auto &pair : other.elems.data) {
+    if (std::find_if(tomb.data.begin(), tomb.data.end(), [&pair](const std::pair<T, uid_t> &tombPair) {
+          return tombPair.first == pair.first;
+        }) == tomb.data.end()) {
+      elems.data.push_back(pair);
     }
-    for (const auto &pair : other.tomb.data) {
-      if (std::find_if(elems.data.begin(), elems.data.end(), [&pair](const std::pair<T, uid_t> &elemPair) {
-            return elemPair.first == pair.first;
-          }) == elems.data.end()) {
-        tomb.data.push_back(pair);
-      }
+  }
+  for (const auto &pair : other.tomb.data) {
+    if (std::find_if(elems.data.begin(), elems.data.end(), [&pair](const std::pair<T, uid_t> &elemPair) {
+          return elemPair.first == pair.first;
+        }) == elems.data.end()) {
+      tomb.data.push_back(pair);
     }
+  }
+  for (auto it = elems.data.begin(); it != elems.data.end();) {
+    if (std::find_if(other.tomb.data.begin(), other.tomb.data.end(), [&it](const std::pair<T, uid_t> &tombPair) {
+          return tombPair.first == it->first;
+        }) != other.tomb.data.end()) {
+      it = elems.data.erase(it);
+    } else {
+      ++it;
+    }
+  }
   // throw NotImplementedException("ORSet<T>::Merge is not implemented");
 }
 
