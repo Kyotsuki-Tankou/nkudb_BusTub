@@ -13,34 +13,6 @@ using uid_t = int64_t;
 template <typename S, typename T>
 class KeyValueVector {
  public:
-  void put(const S &key, const T &value) {
-    auto it = std::find_if(data.begin(), data.end(), [&key](const auto &pair) { return pair.first == key; });
-    if (it != data.end()) {
-      it->second = value;
-    } else {
-      data.push_back(std::make_pair(key, value));
-    }
-  }
-  void remove(const S &key) {
-    auto it = std::find_if(data.begin(), data.end(), [&key](const auto &pair) { return pair.first == key; });
-    if (it != data.end()) {
-      data.erase(it,it);
-    }
-  }
-  void update(const S &key, const T &value) {
-    auto it = std::find_if(data.begin(), data.end(), [&key](const auto &pair) { return pair.first == key; });
-    if (it != data.end()) {
-      it->second = value;
-    }
-  }
-  int get(const S &key) const {
-    auto it = std::find_if(data.begin(), data.end(), [&key](const auto &pair) { return pair.first == key; });
-    if (it != data.end()) {
-      return std::distance(data.begin(), it);
-    } else {
-      return -1;
-    }
-  }
   std::vector<std::pair<S, T>> data;
 };
 template <typename T>

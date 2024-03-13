@@ -10,29 +10,31 @@ namespace bustub {
 template <typename T>
 auto ORSet<T>::Contains(const T &elem) const -> bool {
   // TODO(student): Implement this
-  return elems.get(elem) != -1;
+  return std::find_if(elems.data.begin(), elems.data.end(),
+                      [&elem](const std::pair<T, uid_t> &pair) { return pair.first == elem; }) != elems.data.end();
   // throw NotImplementedException("ORSet<T>::Contains is not implemented");
 }
 
 template <typename T>
 void ORSet<T>::Add(const T &elem, uid_t uid) {
   // TODO(student): Implement this
-  if (elems.get(elem) == -1 && tomb.get(elem) == -1) {
-    elems.put(elem, uid);
-  }
+  if (std::find_if(tomb.data.begin(), tomb.data.end(),
+                     [&elem](const std::pair<T, uid_t>& pair) { return pair.first == elem; })== tomb.data.end()) {
+        elems.data.push_back(std::make_pair(elem, uid));
+    }
   // throw NotImplementedException("ORSet<T>::Add is not implemented");
 }
 
 template <typename T>
 void ORSet<T>::Remove(const T &elem) {
   // TODO(student): Implement this
-  int res = elems.get(elem);
-  if (res != -1) {
-    const auto &pair = elems.data[res];
-    elems.remove(pair.first);
-    tomb.put(pair.first, pair.second);
-    return;
+  auto it = std::find_if(elems.data.begin(), elems.data.end(),
+                         [&elem](const std::pair<T, uid_t> &pair) { return pair.first == elem; });
+  if (it != elems.data.end()) {
+    tomb.data.push_back(*it);
+    elems.data.erase(it);
   }
+
   // throw NotImplementedException("ORSet<T>::Remove is not implemented");
 }
 
@@ -40,41 +42,30 @@ template <typename T>
 void ORSet<T>::Merge(const ORSet<T> &other) {
   // TODO(student): Implement this
   // Find elements in A but in tomb of B
-  std::vector<T> dir;
-  for (const auto &pair : elems.data) {
-    if (other.tomb.get(pair.first) != -1) {
-      dir.push_back(pair.first);
+    for (const auto &pair : other.elems.data) {
+      if (std::find_if(tomb.data.begin(), tomb.data.end(), [&pair](const std::pair<T, uid_t> &tombPair) {
+            return tombPair.first == pair.first;
+          }) == tomb.data.end()) {
+        elems.data.push_back(pair);
+      }
     }
-  }
-  for (const auto &elem : dir) {
-    Remove(elem);
-  }
-  // Find elements in B and not in tomb of A
-  for (const auto &pair : other.elems.data) {
-    if (tomb.get(pair.first) == -1) {
-      elems.put(pair.first, pair.second);
+    for (const auto &pair : other.tomb.data) {
+      if (std::find_if(elems.data.begin(), elems.data.end(), [&pair](const std::pair<T, uid_t> &elemPair) {
+            return elemPair.first == pair.first;
+          }) == elems.data.end()) {
+        tomb.data.push_back(pair);
+      }
     }
-  }
-  // Merge tombs
-  for (const auto &pair : other.tomb.data) {
-    tomb.put(pair.first, pair.second);
-  }
   // throw NotImplementedException("ORSet<T>::Merge is not implemented");
 }
 
 template <typename T>
 auto ORSet<T>::Elements() const -> std::vector<T> {
   // TODO(student): Implement this
-  std::vector<T> res;
-  // std::cout<<"Elements: ";
-  for (const auto &pair : elems.data) {
-    if (tomb.get(pair.first) == -1) {
-      res.push_back(pair.first);
-      // std::cout<<pair.first<<" ";
-    }
-  }
-  // std::cout<<std::endl;
-  return res;
+  std::vector<T> result;
+  std::transform(elems.data.begin(), elems.data.end(), std::back_inserter(result),
+                 [](const std::pair<T, uid_t> &pair) { return pair.first; });
+  return result;
   // throw NotImplementedException("ORSet<T>::Elements is not implemented");
 }
 
