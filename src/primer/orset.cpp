@@ -29,6 +29,7 @@ void ORSet<T>::Add(const T &elem, uid_t uid) {
       elems.data.push_back(std::make_pair(elem, uid));
     }
   }
+  std::cout<<"Add"<<'\n';
   pAll();
   // throw NotImplementedException("ORSet<T>::Add is not implemented");
 }
@@ -36,10 +37,19 @@ void ORSet<T>::Add(const T &elem, uid_t uid) {
 template <typename T>
 void ORSet<T>::Remove(const T &elem) {
   // TODO(student): Implement this
-  elems.data.erase(std::remove_if(elems.data.begin(), elems.data.end(),
-                                  [&elem](const std::pair<T, uid_t> &pair) { return pair.first == elem; }),
-                   elems.data.end());
-  tomb.data.push_back(std::make_pair(elem, 0));
+  std::vector<uid_t> uids_to_remove;
+  for (auto it = elems.data.begin(); it != elems.data.end();) {
+    if (it->first == elem) {
+      uids_to_remove.push_back(it->second);
+      it = elems.data.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  for (uid_t uid : uids_to_remove) {
+    tomb.data.push_back(std::make_pair(elem, uid));
+  }
+  std::cout<<"Remove"<<'\n';
   pAll();
   // throw NotImplementedException("ORSet<T>::Remove is not implemented");
 }
@@ -51,8 +61,16 @@ void ORSet<T>::Merge(const ORSet<T> &other) {
     Add(pair.first, pair.second);
   }
   for (const auto &pair : other.tomb.data) {
-    Remove(pair.first);
+    auto it = std::find_if(elems.data.begin(), elems.data.end(),
+                           [&pair](const std::pair<T, uid_t> &elem_pair) { return pair.first == elem_pair.first; });
+    if (it != elems.data.end()) {
+      tomb.data.push_back(*it);
+      elems.data.erase(it);
+    } else {
+      tomb.data.push_back(pair);
+    }
   }
+  std::cout<<"Merge"<<'\n';
   pAll();
   // throw NotImplementedException("ORSet<T>::Merge is not implemented");
 }
