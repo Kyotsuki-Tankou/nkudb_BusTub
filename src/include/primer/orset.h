@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -63,6 +64,18 @@ class ORSet {
    * @return a string representation of the set.
    */
   auto ToString() const -> std::string;
+
+  void pAll() {
+    std::cout << "elems:";
+    for (const auto &elem : elems.data) {
+      std::cout << '(' << elem.first << ',' << elem.second << ") ";
+    }
+    std::cout << "\ntomb:";
+    for (const auto &elem : tomb.data) {
+      std::cout << '(' << elem.first << ',' << elem.second << ") ";
+    }
+    std::cout << '\n';
+  }
 
  private:
   // TODO(student): Add your private memeber variables to represent ORSet.
