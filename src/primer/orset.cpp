@@ -63,13 +63,13 @@ void ORSet<T>::Merge(const ORSet<T> &other) {
   }
   for (const auto &pair : other.tomb.data) {
     auto it = std::find_if(elems.data.begin(), elems.data.end(),
-                           [&pair](const std::pair<T, uid_t> &elem_pair) { return pair.first == elem_pair.first; });
+                           [&pair](const std::pair<T, uid_t> &elem_pair) { return pair.first == elem_pair.first && pair.second == elem_pair.second; });
     if (it != elems.data.end()) {
       tomb.data.push_back(*it);
       elems.data.erase(it);
     } else {
       auto tomb_it = std::find_if(tomb.data.begin(), tomb.data.end(), [&pair](const std::pair<T, uid_t> &tomb_pair) {
-        return pair.first == tomb_pair.first;
+        return pair.first == tomb_pair.first && pair.second == tomb_pair.second;
       });
       if (tomb_it == tomb.data.end()) {
         tomb.data.push_back(pair);

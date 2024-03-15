@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <iostream>
 #include "common/exception.h"
 #include "fmt/core.h"
 #include "fmt/format.h"
@@ -59,7 +60,6 @@ TEST(ORSetTest, AddWinsTest) {
 
   auto copy_a = student_a_courses;
   auto copy_b = student_b_courses;
-
   student_a_courses.Merge(copy_b);
   student_b_courses.Merge(copy_a);
 
