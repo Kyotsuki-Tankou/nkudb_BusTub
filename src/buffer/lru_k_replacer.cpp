@@ -56,21 +56,21 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   return true;
  }
 
-void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {}
+void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type)
 {
   std::unique_lock<std::mutex> lock(latch_);
-  if(frame_id>=replacer_size)//valid?
+  if(frame_id>=replacer_size_)//valid?
   {
     throw std::invalid_argument("Invalid frame_id");
   }
-  auto it=node_store.find(frame_id);
-  if(it==node_store.end())//Didn't find, create a new one
+  auto it=node_store_.find(frame_id);
+  if(it==node_store_.end())//Didn't find, create a new one
   {
     LRUKNode tmp;
-    tmp.fid_=frame.id;
+    tmp.fid_=frame_id;
     tmp.k_=k_;
     tmp.history_.assign(k_,0);
-    tmp.is_evitable_=true;
+    tmp.is_evictable_=true;
     node_store_.insert({frame_id,tmp});
     it=node_store_.find(frame_id);
   }
@@ -84,15 +84,15 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {}
   if(!it->second.is_evictable_)
   {
     it->second.is_evictable_=true;
-    curr_size++;
+    curr_size_++;
   }
 }
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   std::unique_lock<std::mutex> lock(latch_);
-  auto it=node_store_.find(framd_id);
+  auto it=node_store_.find(frame_id);
   if(it!=node_store_.end())
   {
-    it->second.is_evitable_=set_evictable;
+    it->second.is_evictable_=set_evictable;
     curr_size_+=set_evictable?1:-1;
   }
   return;
