@@ -87,7 +87,16 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {}
     curr_size++;
   }
 }
-void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {}
+void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
+  std::unique_lock<std::mutex> lock(latch_);
+  auto it=node_store_.find(framd_id);
+  if(it!=node_store_.end())
+  {
+    it->second.is_evitable_=set_evictable;
+    curr_size_+=set_evictable?1:-1;
+  }
+  return;
+}
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
   std::unique_lock<std::mutex> lock(latch_);
@@ -101,6 +110,8 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
   curr_size_--;
 }
 
-auto LRUKReplacer::Size() -> size_t { return 0; }
+auto LRUKReplacer::Size() -> size_t { 
+  std::unique_lock<std::mutex> lock(latch_);
+  return curr_size_; }
 
 }  // namespace bustub
