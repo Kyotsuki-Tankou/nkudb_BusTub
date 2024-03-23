@@ -30,10 +30,17 @@ class LRUKNode {
   /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
   // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
 public:
-  std::vector<size_t> history_;
+  
   size_t k_;
   frame_id_t fid_;
   bool is_evictable_{false};
+  std::vector<size_t> history_;
+  LRUKNode()
+  {
+    fid_=1;
+    k_=0;
+    is_evictable_=false;
+  };
 };
 
 /**
@@ -57,7 +64,6 @@ class LRUKReplacer {
    * @param num_frames the maximum number of frames the LRUReplacer will be required to store
    */
   explicit LRUKReplacer(size_t num_frames, size_t k);
-
   DISALLOW_COPY_AND_MOVE(LRUKReplacer);
 
   /**
@@ -156,6 +162,14 @@ class LRUKReplacer {
   size_t replacer_size_;
   size_t k_;
   std::mutex latch_;
+  public:
+  LRUKReplacer()
+  {
+    replacer_size_=0;
+    k_=0;
+    curr_size_=0;
+    node_store_.clear();
+  };
 };
 
 }  // namespace bustub
