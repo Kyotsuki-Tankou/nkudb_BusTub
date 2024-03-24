@@ -1,6 +1,6 @@
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 #include "common/exception.h"
 #include "fmt/core.h"
 #include "fmt/format.h"

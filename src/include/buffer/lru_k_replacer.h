@@ -17,6 +17,7 @@
 #include <mutex>  // NOLINT
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 #include "common/config.h"
 #include "common/macros.h"
@@ -26,20 +27,18 @@ namespace bustub {
 enum class AccessType { Unknown = 0, Lookup, Scan, Index };
 
 class LRUKNode {
-//  private:
+  //  private:
   /** History of last seen K timestamps of this page. Least recent timestamp stored in front. */
   // Remove maybe_unused if you start using them. Feel free to change the member variables as you want.
-public:
-  
+ public:
   size_t k_;
   frame_id_t fid_;
   bool is_evictable_{false};
   std::vector<size_t> history_;
-  LRUKNode()
-  {
-    fid_=1;
-    k_=0;
-    is_evictable_=false;
+  LRUKNode() {
+    fid_ = 1;
+    k_ = 0;
+    is_evictable_ = false;
   };
 };
 
@@ -162,14 +161,33 @@ class LRUKReplacer {
   size_t replacer_size_;
   size_t k_;
   std::mutex latch_;
-  public:
-  LRUKReplacer()
-  {
-    replacer_size_=0;
-    k_=0;
-    curr_size_=0;
+
+ public:
+  LRUKReplacer() {
+    replacer_size_ = 0;
+    current_timestamp_ = 0;
+    k_ = 0;
+    curr_size_ = 0;
     node_store_.clear();
   };
+  void Dbg() {
+  std::cout<<"Dbg Begin:\n";
+  for (const auto& node : node_store_) {
+    std::cout << "Frame ID: " << node.first << ", History: [";
+    for (size_t i = 0; i < node.second.history_.size(); i++) {
+      if (i != 0) {
+        std::cout << ", ";
+      }
+      std::cout << node.second.history_[i];
+    }
+    std::cout << "]";
+    std::cout << "Is_Evitable" << node.second.is_evictable_ ;    
+    
+    std::cout<< std::endl;
+  }
+  std::cout<<"Dbg End:\n";
+}
+
 };
 
 }  // namespace bustub
