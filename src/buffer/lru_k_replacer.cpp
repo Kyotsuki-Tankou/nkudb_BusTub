@@ -35,7 +35,9 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
     if (!node.second.is_evictable_) {
       continue;
     }
-    size_t backward_k_distance = current_timestamp_ - node.second.history_.back();
+
+    size_t backward_k_distance = current_timestamp_ - node.second.history_[node.second.history_.size() - 1];    
+    // std::cout<<"Node:"<<node.first<<" dist:"<<backward_k_distance<<"\n";
     if (backward_k_distance > max_backward_k_distance) {
       max_backward_k_distance = backward_k_distance;
       evict_id = node.first;
@@ -44,23 +46,88 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
 
   // If multiple frames have the same largest backward k-distance, use LRU to choose victim
   for (const auto &node : node_store_) {
-    if (!node.second.is_evictable_ || node.second.history_.size() < k_) {
+    if (!node.second.is_evictable_) {
       continue;
     }
-    size_t backward_k_distance = current_timestamp_ - node.second.history_[k_ - 1];
+    size_t backward_k_distance = current_timestamp_ - node.second.history_[node.second.history_.size() - 1];
     if (backward_k_distance == max_backward_k_distance && node.first != evict_id &&
         node.second.history_.front() < node_store_[evict_id].history_.front()) {
       evict_id = node.first;
     }
   }
-
+  Dbg();
   // Evict the chosen frame
   *frame_id = evict_id;
   node_store_.erase(evict_id);
   curr_size_--;
-  Dbg();
+  
   return true;
 }
+
+// auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool
+//     {
+//         auto candidate = node_store_.begin();
+//         int candidate_dist = 0;
+//         bool candidate_dist_inf = false;
+//         bool found = false;
+//         for (auto iter = node_store_.begin(); iter != node_store_.end(); iter++)
+//         {
+//             if (iter->second.is_evictable_ == false)
+//             {
+//                 continue;
+//             }
+//             else
+//             {
+//                 found = true;
+//             }
+//             int curr_dist = 0;
+//             if (iter->second.history_.size() < this->k_)
+//             {
+//                 if (candidate_dist_inf == false)
+//                 {
+//                     candidate = iter;
+//                     candidate_dist_inf = true;
+//                 }
+//                 else
+//                 {
+//                     if (*(iter->second.history_.begin()) < *(candidate->second.history_.begin()))
+//                     {
+//                         candidate = iter;
+//                     }
+//                 }
+//             }
+//             else
+//             {
+//                 if (candidate_dist_inf == true)
+//                 {
+//                     continue;
+//                 }
+//                 auto kth_access = iter->second.history_.begin();
+//                 for (long unsigned int i = 0; i < this->k_ - 1; i += 1)
+//                 {
+//                     kth_access++;
+//                 }
+//                 curr_dist = *(iter->second.history_.begin()) - *kth_access;
+//                 if (curr_dist > candidate_dist)
+//                 {
+//                     candidate = iter;
+//                     candidate_dist = curr_dist;
+//                 }
+//             }
+//         }
+//         if (found == true)
+//         {
+//             *frame_id=candidate->second.fid_;
+//             this->node_store_.erase(candidate->second.fid_);
+//             Dbg();
+//             return true;
+//         }
+//         else
+//         {
+//           Dbg();
+//             return false;
+//         }
+//     }
 
 void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
   std::unique_lock<std::mutex> lock(latch_);
@@ -74,13 +141,13 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
     LRUKNode tmp;
     tmp.fid_ = frame_id;
     tmp.k_ = k_;
-    tmp.history_.assign(k_, 0);
+    tmp.history_.assign(k_, -11451419);
     tmp.is_evictable_ = true;
     node_store_.insert({frame_id, tmp});
     it = node_store_.find(frame_id);
   }
   // move right for space of the recorded timestamp
-  for (size_t i = 1; i < k_; i++) {
+  for (size_t i = k_ - 1; i > 0; i--) {
     it->second.history_[i] = it->second.history_[i - 1];
   }
   it->second.history_[0] = current_timestamp_++;
@@ -92,6 +159,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
   Dbg();
   // This function should be called after a page is pinned in the BufferPoolManager.
 }
+
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
   std::unique_lock<std::mutex> lock(latch_);
   auto it = node_store_.find(frame_id);
@@ -122,7 +190,14 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
 }
 auto LRUKReplacer::Size() -> size_t {
   std::unique_lock<std::mutex> lock(latch_);
-  return curr_size_;
+  long long res=0;
+  for (const auto &node : node_store_) {
+    if (!node.second.is_evictable_) {
+      continue;
+    }
+    res++;
+  }
+  return res;
 }
 
 }  // namespace bustub

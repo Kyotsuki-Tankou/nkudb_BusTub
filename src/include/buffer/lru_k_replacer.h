@@ -34,7 +34,7 @@ class LRUKNode {
   size_t k_;
   frame_id_t fid_;
   bool is_evictable_{false};
-  std::vector<size_t> history_;
+  std::vector<long long> history_;
   LRUKNode() {
     fid_ = 1;
     k_ = 0;
