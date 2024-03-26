@@ -85,8 +85,41 @@ auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
   }
 
 auto BufferPoolManager::FetchPage(page_id_t page_id, AccessType access_type) -> Page * {
+    std::lock_guard<std::mutex> guard(latch_);
 
-  return nullptr;
+    // First search for page_id in the buffer pool
+    if (page_table_.find(page_id) != page_table_.end()) {
+        // If found, return the page and update its access history
+        frame_id_t frame_id = page_table_[page_id];
+        replacer_->RecordAccess(frame_id);
+        return &pages_[frame_id];
+    }
+
+    // If not found, try to find a replacement frame from the free list
+    frame_id_t frame_id;
+    if (!free_list_.empty()) {
+        frame_id = free_list_.front();
+        free_list_.pop_front();
+    } else {
+        // If the free list is empty, find a replacement frame from the replacer
+        replacer_->Evict(&frame_id);
+        UnpinPage(page_table_[frame_id], pages_[frame_id].IsDirty());
+    }
+
+    // Read the page from disk by scheduling a read request with disk_manager_->ReadPage()
+    disk_scheduler_->disk_manager_->ReadPage(page_id, pages_[frame_id].GetData());
+
+    // Replace the old page in the frame and update the metadata of the new page
+    page_table_[page_id] = frame_id;
+    pages_[frame_id].page_id_=page_id;
+    pages_[frame_id].is_dirty_=false;
+    pages_[frame_id].pin_count_=1;
+
+    // Disable eviction and record the access history of the frame
+    replacer_->SetEvictable(frame_id, false);
+    replacer_->RecordAccess(frame_id);
+
+    return &pages_[frame_id];
 }
 
 auto BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty, AccessType access_type) -> bool {
