@@ -15,6 +15,8 @@
 #include "common/exception.h"
 #include "common/macros.h"
 #include "storage/page/page_guard.h"
+#include "storage/disk/disk_manager.h"
+#include "storage/disk/disk_manager_memory.h"
 
 namespace bustub {
 
@@ -38,9 +40,52 @@ BufferPoolManager::BufferPoolManager(size_t pool_size, DiskManager *disk_manager
 
 BufferPoolManager::~BufferPoolManager() { delete[] pages_; }
 
-auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * { return nullptr; }
+auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * { 
+  std::lock_guard<std::mutex> latch_guard(latch_);
+  if (!free_list_.empty()) {
+    frame_id_t frame_id = free_list_.front();
+    free_list_.pop_front();
+
+    //Allocate new page
+    *page_id = AllocatePage();
+
+    //Reset
+    pages_[frame_id].page_id_=*page_id;
+    pages_[frame_id].is_dirty_=false;
+    pages_[frame_id].pin_count_=1;
+
+    //Update the page table and replacer
+    page_table_[*page_id] = frame_id;
+    replacer_->RecordAccess(frame_id);
+    replacer_->SetEvictable(frame_id, false);
+    //Return a pointer to the new page
+    return &pages_[frame_id];
+  }
+  // If there is no free frame, try to evict a page using the replacer
+  frame_id_t victim_frame_id;
+  replacer_->Evict(&victim_frame_id);
+
+  // If the victim frame is pinned, return nullptr
+  if (pages_[victim_frame_id].GetPinCount() > 0) {
+    return nullptr;
+  }
+  //If the victim frame is dirty, write it back to disk
+  if (pages_[victim_frame_id].IsDirty()) {
+    FlushPage(pages_[victim_frame_id].GetPageId());
+  }
+  page_table_.erase(pages_[victim_frame_id].GetPageId());
+  *page_id = AllocatePage();
+  pages_[victim_frame_id].page_id_=*page_id;
+  pages_[victim_frame_id].is_dirty_=false;
+  pages_[victim_frame_id].pin_count_=1;
+  page_table_[*page_id] = victim_frame_id;
+  replacer_->RecordAccess(victim_frame_id);
+  replacer_->SetEvictable(victim_frame_id, false);
+  return &pages_[victim_frame_id];
+  }
 
 auto BufferPoolManager::FetchPage(page_id_t page_id, AccessType access_type) -> Page * {
+
   return nullptr;
 }
 
@@ -48,7 +93,19 @@ auto BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty, AccessType a
   return false;
 }
 
-auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool { return false; }
+auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool {
+  std::lock_guard<std::mutex> guard(latch_);
+  auto it = page_table_.find(page_id);
+  if (it == page_table_.end()) {
+      return false;
+  }
+
+  //Write
+  disk_scheduler_->disk_manager_->WritePage(page_id, pages_[it->second].GetData());
+  pages_[it->second].is_dirty_=false;
+
+  return true;
+}
 
 void BufferPoolManager::FlushAllPages() {}
 
