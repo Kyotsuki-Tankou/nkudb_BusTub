@@ -24,9 +24,9 @@ BufferPoolManager::BufferPoolManager(size_t pool_size, DiskManager *disk_manager
                                      LogManager *log_manager)
     : pool_size_(pool_size), disk_scheduler_(std::make_unique<DiskScheduler>(disk_manager)), log_manager_(log_manager) {
   // TODO(students): remove this line after you have implemented the buffer pool manager
-  throw NotImplementedException(
-      "BufferPoolManager is not implemented yet. If you have finished implementing BPM, please remove the throw "
-      "exception line in `buffer_pool_manager.cpp`.");
+  // throw NotImplementedException(
+  //     "BufferPoolManager is not implemented yet. If you have finished implementing BPM, please remove the throw "
+  //     "exception line in `buffer_pool_manager.cpp`.");
 
   // we allocate a consecutive memory space for the buffer pool
   pages_ = new Page[pool_size_];
@@ -123,7 +123,32 @@ auto BufferPoolManager::FetchPage(page_id_t page_id, AccessType access_type) -> 
 }
 
 auto BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty, AccessType access_type) -> bool {
-  return false;
+  std::lock_guard<std::mutex> guard(latch_);
+
+    // Find the frame associated with the page
+    auto it = page_table_.find(page_id);
+    if (it == page_table_.end()) {
+        // Page not found in page table
+        return false;
+    }
+
+    // Decrement the pin count of the page
+    if (pages_[it->second].GetPinCount() <= 0) {
+        // Pin count is already <= 0, return false
+        return false;
+    }
+    pages_[it->second].pin_count_--;
+
+    if (is_dirty) {
+        pages_[it->second].is_dirty_=true;
+    }
+
+    // If the pin count is now 0, make the frame evictable by the replacer
+    if (pages_[it->second].GetPinCount() == 0) {
+        replacer_->SetEvictable(it->second, true);
+    }
+
+    return true;
 }
 
 auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool {
@@ -140,9 +165,46 @@ auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool {
   return true;
 }
 
-void BufferPoolManager::FlushAllPages() {}
+void BufferPoolManager::FlushAllPages() {
+  std::lock_guard<std::mutex> guard(latch_);
+  for (auto &it : page_table_) {
+        if (pages_[it.second].IsDirty()) {
+            disk_scheduler_->disk_manager_->WritePage(it.first, pages_[it.second].GetData());
+            pages_[it.second].is_dirty_=false;
+        }
+    }
+}
 
-auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool { return false; }
+auto BufferPoolManager::DeletePage(page_id_t page_id) -> bool {
+  std::lock_guard<std::mutex> guard(latch_);
+  // Check if the page exists in the page table
+  auto it = page_table_.find(page_id);
+  if (it == page_table_.end()) {
+      // Page doesn't exist, return true
+      return true;
+  }
+
+  if (pages_[it->second].GetPinCount() > 0) {
+      return false;
+  }
+
+  // Remove the page from the page table
+  page_table_.erase(it);
+
+  replacer_->Evict(&(it->second));
+
+  free_list_.push_back(it->second);
+
+  pages_[it->second].ResetMemory();
+  pages_[it->second].page_id_=INVALID_PAGE_ID;
+  pages_[it->second].is_dirty_=false;
+  pages_[it->second].pin_count_=0;
+
+  // Call DeallocatePage to imitate freeing the page on the disk
+  DeallocatePage(page_id);
+
+  return true;
+}
 
 auto BufferPoolManager::AllocatePage() -> page_id_t { return next_page_id_++; }
 

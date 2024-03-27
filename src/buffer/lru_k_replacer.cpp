@@ -55,7 +55,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
       evict_id = node.first;
     }
   }
-  Dbg();
+  // Dbg();
   // Evict the chosen frame
   *frame_id = evict_id;
   node_store_.erase(evict_id);
@@ -156,7 +156,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
     it->second.is_evictable_ = true;
     curr_size_++;
   }
-  Dbg();
+  // Dbg();
   // This function should be called after a page is pinned in the BufferPoolManager.
 }
 
@@ -171,7 +171,7 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
       curr_size_--;
     }
   }
-  Dbg();
+  // Dbg();
   return;
 }
 
@@ -185,7 +185,7 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
     it->second.is_evictable_ = false;
     curr_size_--;
   }
-  Dbg();
+  // Dbg();
   return;
 }
 auto LRUKReplacer::Size() -> size_t {
