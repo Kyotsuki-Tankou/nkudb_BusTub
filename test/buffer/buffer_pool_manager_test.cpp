@@ -64,30 +64,29 @@ TEST(BufferPoolManagerTest, BinaryDataTest) {
   for (size_t i = 1; i < buffer_pool_size; ++i) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
   }
-  std::cout<<111111<<std::endl;
   // Scenario: Once the buffer pool is full, we should not be able to create any new pages.
   for (size_t i = buffer_pool_size; i < buffer_pool_size * 2; ++i) {
     EXPECT_EQ(nullptr, bpm->NewPage(&page_id_temp));
   }
-  std::cout<<222222<<std::endl;
   // Scenario: After unpinning pages {0, 1, 2, 3, 4}, we should be able to create 5 new pages
   for (int i = 0; i < 5; ++i) {
     EXPECT_EQ(true, bpm->UnpinPage(i, true));
     bpm->FlushPage(i);
   }
-  std::cout<<333333<<std::endl;
   for (int i = 0; i < 5; ++i) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
     // Unpin the page here to allow future fetching
     bpm->UnpinPage(page_id_temp, false);
   }
-  std::cout<<444444<<std::endl;
   // Scenario: We should be able to fetch the data we wrote a while ago.
   page0 = bpm->FetchPage(0);
+  // std::cout<<11111<<std::endl;
   ASSERT_NE(nullptr, page0);
+  // std::cout<<22222<<std::endl;
   EXPECT_EQ(0, memcmp(page0->GetData(), random_binary_data, BUSTUB_PAGE_SIZE));
+  // std::cout<<33333<<std::endl;
   EXPECT_EQ(true, bpm->UnpinPage(0, true));
-  
+  // std::cout<<44444<<std::endl;
   // Shutdown the disk manager and remove the temporary file we created.
   disk_manager->ShutDown();
   remove("test.db");
@@ -111,41 +110,44 @@ TEST(BufferPoolManagerTest, SampleTest) {
   // Scenario: The buffer pool is empty. We should be able to create a new page.
   ASSERT_NE(nullptr, page0);
   EXPECT_EQ(0, page_id_temp);
-
+  // std::cout<<11111<<std::endl;
   // Scenario: Once we have a page, we should be able to read and write content.
   snprintf(page0->GetData(), BUSTUB_PAGE_SIZE, "Hello");
   EXPECT_EQ(0, strcmp(page0->GetData(), "Hello"));
-
+  // std::cout<<22222<<std::endl;
   // Scenario: We should be able to create new pages until we fill up the buffer pool.
   for (size_t i = 1; i < buffer_pool_size; ++i) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
   }
-
+  // std::cout<<33333<<std::endl;
   // Scenario: Once the buffer pool is full, we should not be able to create any new pages.
   for (size_t i = buffer_pool_size; i < buffer_pool_size * 2; ++i) {
     EXPECT_EQ(nullptr, bpm->NewPage(&page_id_temp));
   }
-
+  // std::cout<<44444<<std::endl;
   // Scenario: After unpinning pages {0, 1, 2, 3, 4} and pinning another 4 new pages,
   // there would still be one buffer page left for reading page 0.
   for (int i = 0; i < 5; ++i) {
     EXPECT_EQ(true, bpm->UnpinPage(i, true));
+    // std::cout<<55555<<std::endl;
   }
   for (int i = 0; i < 4; ++i) {
     EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
+    // std::cout<<66666<<std::endl;
   }
 
   // Scenario: We should be able to fetch the data we wrote a while ago.
   page0 = bpm->FetchPage(0);
   ASSERT_NE(nullptr, page0);
   EXPECT_EQ(0, strcmp(page0->GetData(), "Hello"));
-
+  // std::cout<<77777<<std::endl;
   // Scenario: If we unpin page 0 and then make a new page, all the buffer pages should
   // now be pinned. Fetching page 0 again should fail.
   EXPECT_EQ(true, bpm->UnpinPage(0, true));
   EXPECT_NE(nullptr, bpm->NewPage(&page_id_temp));
+  // std::cout<<77778<<std::endl;
   EXPECT_EQ(nullptr, bpm->FetchPage(0));
-
+  // std::cout<<88888<<std::endl;
   // Shutdown the disk manager and remove the temporary file we created.
   disk_manager->ShutDown();
   remove("test.db");

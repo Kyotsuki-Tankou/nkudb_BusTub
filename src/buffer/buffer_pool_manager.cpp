@@ -41,8 +41,9 @@ BufferPoolManager::BufferPoolManager(size_t pool_size, DiskManager *disk_manager
 BufferPoolManager::~BufferPoolManager() { delete[] pages_; }
 
 auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * { 
-  std::lock_guard<std::mutex> latch_guard(latch_);
+  // std::lock_guard<std::mutex> latch_guard(latch_);
   if (!free_list_.empty()) {
+    // std::cout<<1111<<std::endl;
     frame_id_t frame_id = free_list_.front();
     free_list_.pop_front();
 
@@ -61,18 +62,28 @@ auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
     //Return a pointer to the new page
     return &pages_[frame_id];
   }
+  // std::cout<<2222<<std::endl;
   // If there is no free frame, try to evict a page using the replacer
   frame_id_t victim_frame_id;
   replacer_->Evict(&victim_frame_id);
-
-  // If the victim frame is pinned, return nullptr
-  if (pages_[victim_frame_id].GetPinCount() > 0) {
+  // If the victim frame is invalid, return nullptr
+  if (victim_frame_id <0) {
     return nullptr;
   }
-  //If the victim frame is dirty, write it back to disk
+  std::cout<<victim_frame_id<<std::endl;
+  // If the victim frame is pinned, return nullptr
+  if (pages_[victim_frame_id].GetPinCount() > 0) {
+    // std::cout<<3333<<std::endl;
+    return nullptr;
+  }
+
+  // If the victim frame is dirty, write it back to disk
   if (pages_[victim_frame_id].IsDirty()) {
+    // std::cout<<4444<<std::endl;
+    std::cout<<pages_[victim_frame_id].GetPageId()<<std::endl;
     FlushPage(pages_[victim_frame_id].GetPageId());
   }
+
   page_table_.erase(pages_[victim_frame_id].GetPageId());
   *page_id = AllocatePage();
   pages_[victim_frame_id].page_id_=*page_id;
@@ -82,17 +93,20 @@ auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
   replacer_->RecordAccess(victim_frame_id);
   replacer_->SetEvictable(victim_frame_id, false);
   return &pages_[victim_frame_id];
-  }
+
+}
 
 auto BufferPoolManager::FetchPage(page_id_t page_id, AccessType access_type) -> Page * {
-    std::lock_guard<std::mutex> guard(latch_);
+    // std::lock_guard<std::mutex> guard(latch_);
 
     // First search for page_id in the buffer pool
     if (page_table_.find(page_id) != page_table_.end()) {
         // If found, return the page and update its access history
         frame_id_t frame_id = page_table_[page_id];
         replacer_->RecordAccess(frame_id);
+        std::cout<<11111<<std::endl;
         return &pages_[frame_id];
+        
     }
 
     // If not found, try to find a replacement frame from the free list
@@ -100,15 +114,20 @@ auto BufferPoolManager::FetchPage(page_id_t page_id, AccessType access_type) -> 
     if (!free_list_.empty()) {
         frame_id = free_list_.front();
         free_list_.pop_front();
+        std::cout<<22222<<std::endl;
     } else {
         // If the free list is empty, find a replacement frame from the replacer
         replacer_->Evict(&frame_id);
-        UnpinPage(page_table_[frame_id], pages_[frame_id].IsDirty());
+        std::cout<<33333<<std::endl;
+        std::cout<<frame_id<<std::endl;
+        if (frame_id<0)  return nullptr;
+          UnpinPage(page_table_[frame_id], pages_[frame_id].IsDirty());
+          std::cout<<33334<<std::endl;
     }
-
+    std::cout<<44444<<std::endl;
     // Read the page from disk by scheduling a read request with disk_manager_->ReadPage()
     disk_scheduler_->disk_manager_->ReadPage(page_id, pages_[frame_id].GetData());
-
+    std::cout<<55555<<std::endl;
     // Replace the old page in the frame and update the metadata of the new page
     page_table_[page_id] = frame_id;
     pages_[frame_id].page_id_=page_id;
@@ -117,37 +136,43 @@ auto BufferPoolManager::FetchPage(page_id_t page_id, AccessType access_type) -> 
 
     // Disable eviction and record the access history of the frame
     replacer_->SetEvictable(frame_id, false);
+    std::cout<<66666<<std::endl;
     replacer_->RecordAccess(frame_id);
-
+    std::cout<<77777<<std::endl;
     return &pages_[frame_id];
 }
 
 auto BufferPoolManager::UnpinPage(page_id_t page_id, bool is_dirty, AccessType access_type) -> bool {
+  std::cout<<1110<<std::endl;
   std::lock_guard<std::mutex> guard(latch_);
-
+    std::cout<<1111<<std::endl;
     // Find the frame associated with the page
     auto it = page_table_.find(page_id);
     if (it == page_table_.end()) {
+      std::cout<<2222<<std::endl;
         // Page not found in page table
         return false;
     }
 
     // Decrement the pin count of the page
-    if (pages_[it->second].GetPinCount() <= 0) {
+    if (pages_[it->second].GetPinCount() < 0) {
         // Pin count is already <= 0, return false
+        std::cout<<3333<<std::endl;
         return false;
     }
     pages_[it->second].pin_count_--;
 
     if (is_dirty) {
+      std::cout<<4444<<std::endl;
         pages_[it->second].is_dirty_=true;
     }
 
     // If the pin count is now 0, make the frame evictable by the replacer
     if (pages_[it->second].GetPinCount() == 0) {
+        std::cout<<5555<<std::endl;
         replacer_->SetEvictable(it->second, true);
     }
-
+    std::cout<<6666<<std::endl;
     return true;
 }
 
@@ -157,7 +182,9 @@ auto BufferPoolManager::FlushPage(page_id_t page_id) -> bool {
   if (it == page_table_.end()) {
       return false;
   }
-
+  // std::cout<<1111<<std::endl;
+  std::cout<<page_id<<std::endl;
+  std::cout<<pages_[it->second].GetData()<<std::endl;
   //Write
   disk_scheduler_->disk_manager_->WritePage(page_id, pages_[it->second].GetData());
   pages_[it->second].is_dirty_=false;
