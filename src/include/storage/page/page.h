@@ -35,7 +35,11 @@ class Page {
     data_ = new char[BUSTUB_PAGE_SIZE];
     ResetMemory();
   }
-
+  /** Set the dirty value of this page.*/
+  void SetDirty(bool dirty=true)
+  {
+    is_dirty_=dirty;
+  }
   /** Default destructor. */
   ~Page() { delete[] data_; }
 

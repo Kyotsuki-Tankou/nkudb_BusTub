@@ -3,13 +3,54 @@
 
 namespace bustub {
 
-BasicPageGuard::BasicPageGuard(BasicPageGuard &&that) noexcept {}
+BasicPageGuard::BasicPageGuard(BasicPageGuard &&that) noexcept {
+  std::swap(bpm_, that.bpm_);
+  std::swap(page_, that.page_);
+  std::swap(is_dirty_, that.is_dirty_);
+}
 
-void BasicPageGuard::Drop() {}
+void BasicPageGuard::Drop() {
+  if (page_ == nullptr) {
+    return;
+  }
+  if (is_dirty_) {
+    page_->SetDirty();
+    is_dirty_=true;
+  }
 
-auto BasicPageGuard::operator=(BasicPageGuard &&that) noexcept -> BasicPageGuard & { return *this; }
+  //Unpin
+  bpm_->UnpinPage(page_->GetPageId(), is_dirty_);
 
-BasicPageGuard::~BasicPageGuard(){};  // NOLINT
+  //Reset
+  page_ = nullptr;
+  bpm_ = nullptr;
+  is_dirty_ = false;
+}
+
+auto BasicPageGuard::operator=(BasicPageGuard &&that) noexcept -> BasicPageGuard & {
+  //check self-point
+  if (this == &that) {
+    return *this;
+  }
+
+  //drop&unpin currentl page
+  Drop();
+
+  //move other's to this
+  page_ = that.page_;
+  bpm_ = that.bpm_;
+  is_dirty_ = that.is_dirty_;
+
+  //reset other's
+  that.page_ = nullptr;
+  that.bpm_ = nullptr;
+  that.is_dirty_ = false;
+
+  return *this;
+}
+
+
+BasicPageGuard::~BasicPageGuard(){ Drop();};  // NOLINT
 
 auto BasicPageGuard::UpgradeRead() -> ReadPageGuard { return {bpm_, page_}; }
 
