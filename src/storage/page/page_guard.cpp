@@ -56,7 +56,7 @@ auto BasicPageGuard::UpgradeRead() -> ReadPageGuard { return {bpm_, page_}; }
 
 auto BasicPageGuard::UpgradeWrite() -> WritePageGuard { return {bpm_, page_}; }
 
-ReadPageGuard::ReadPageGuard(BufferPoolManager *bpm, Page *page) {latch_->RLock();}
+ReadPageGuard::ReadPageGuard(BufferPoolManager *bpm, Page *page) {}
 
 ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept:guard_(std::move(that.guard_)) {latch_->RLock();}
 
@@ -74,7 +74,7 @@ void ReadPageGuard::Drop() {
   guard_.Drop();
 }
 
-ReadPageGuard::~ReadPageGuard() {Drop();}  // NOLINT
+ReadPageGuard::~ReadPageGuard() {}  // NOLINT
 
 WritePageGuard::WritePageGuard(BufferPoolManager *bpm, Page *page):guard_(bpm, page), latch_(new ReaderWriterLatch()) {
   latch_->WLock();
