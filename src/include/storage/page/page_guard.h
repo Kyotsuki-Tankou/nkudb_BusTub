@@ -1,6 +1,9 @@
 #pragma once
 
 #include "storage/page/page.h"
+#include "common/rwlatch.h"
+#include <memory>
+
 
 namespace bustub {
 
@@ -169,6 +172,7 @@ class ReadPageGuard {
  private:
   // You may choose to get rid of this and add your own private variables.
   BasicPageGuard guard_;
+  std::unique_ptr<ReaderWriterLatch> latch_;
 };
 
 class WritePageGuard {
@@ -236,6 +240,7 @@ class WritePageGuard {
  private:
   // You may choose to get rid of this and add your own private variables.
   BasicPageGuard guard_;
+  std::unique_ptr<ReaderWriterLatch> latch_;
 };
 
 }  // namespace bustub

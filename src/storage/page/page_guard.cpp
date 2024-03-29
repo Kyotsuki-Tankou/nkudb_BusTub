@@ -56,24 +56,47 @@ auto BasicPageGuard::UpgradeRead() -> ReadPageGuard { return {bpm_, page_}; }
 
 auto BasicPageGuard::UpgradeWrite() -> WritePageGuard { return {bpm_, page_}; }
 
-ReadPageGuard::ReadPageGuard(BufferPoolManager *bpm, Page *page) {}
+ReadPageGuard::ReadPageGuard(BufferPoolManager *bpm, Page *page) {latch_->RLock();}
 
-ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept = default;
+ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept:guard_(std::move(that.guard_)) {latch_->RLock();}
 
-auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & { return *this; }
+auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & {
+  if (this != &that) {
+    latch_->RUnlock();
+    guard_ = std::move(that.guard_);
+    latch_ = std::move(that.latch_);
+  }
+  return *this;
+}
 
-void ReadPageGuard::Drop() {}
+void ReadPageGuard::Drop() {
+  latch_->RUnlock();
+  guard_.Drop();
+}
 
-ReadPageGuard::~ReadPageGuard() {}  // NOLINT
+ReadPageGuard::~ReadPageGuard() {Drop();}  // NOLINT
 
-WritePageGuard::WritePageGuard(BufferPoolManager *bpm, Page *page) {}
+WritePageGuard::WritePageGuard(BufferPoolManager *bpm, Page *page):guard_(bpm, page), latch_(new ReaderWriterLatch()) {
+  latch_->WLock();
+}
+WritePageGuard::WritePageGuard(WritePageGuard &&that) noexcept:guard_(std::move(that.guard_)), latch_(std::move(that.latch_)) {
+  latch_->WLock();
+}
 
-WritePageGuard::WritePageGuard(WritePageGuard &&that) noexcept = default;
+auto WritePageGuard::operator=(WritePageGuard &&that) noexcept -> WritePageGuard & {
+  if (this != &that) {
+    latch_->WUnlock();
+    guard_ = std::move(that.guard_);
+    latch_ = std::move(that.latch_);
+  }
+  return *this;
+}
 
-auto WritePageGuard::operator=(WritePageGuard &&that) noexcept -> WritePageGuard & { return *this; }
+void WritePageGuard::Drop() {
+  latch_->WUnlock();
+  guard_.Drop();
+}
 
-void WritePageGuard::Drop() {}
-
-WritePageGuard::~WritePageGuard() {}  // NOLINT
+WritePageGuard::~WritePageGuard() {Drop();}  // NOLINT
 
 }  // namespace bustub
