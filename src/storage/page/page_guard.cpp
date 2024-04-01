@@ -51,9 +51,23 @@ auto BasicPageGuard::operator=(BasicPageGuard &&that) noexcept -> BasicPageGuard
 
 BasicPageGuard::~BasicPageGuard() { Drop(); };  // NOLINT
 
-auto BasicPageGuard::UpgradeRead() -> ReadPageGuard { return {bpm_, page_}; }
+// auto BasicPageGuard::UpgradeRead() -> ReadPageGuard { return {bpm_, page_}; }
 
-auto BasicPageGuard::UpgradeWrite() -> WritePageGuard { return {bpm_, page_}; }
+// auto BasicPageGuard::UpgradeWrite() -> WritePageGuard { return {bpm_, page_}; }
+
+auto BasicPageGuard::UpgradeRead() -> ReadPageGuard {
+  if (page_ == nullptr) {
+    return ReadPageGuard(bpm_, nullptr);
+  }
+  return ReadPageGuard(bpm_, page_);
+}
+
+auto BasicPageGuard::UpgradeWrite() -> WritePageGuard {
+  if (page_ == nullptr) {
+    return WritePageGuard(bpm_, nullptr);
+  }
+  return WritePageGuard(bpm_, page_);
+}
 
 ReadPageGuard::ReadPageGuard(BufferPoolManager *bpm, Page *page) {if(page==nullptr)  return;guard_.bpm_=bpm;guard_.page_=page;}
 
