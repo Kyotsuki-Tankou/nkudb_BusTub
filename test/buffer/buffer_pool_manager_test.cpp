@@ -13,10 +13,10 @@
 #include "buffer/buffer_pool_manager.h"
 
 #include <cstdio>
+#include <iostream>
 #include <limits>
 #include <random>
 #include <string>
-#include <iostream>
 
 #include "gtest/gtest.h"
 
@@ -40,7 +40,7 @@ TEST(BufferPoolManagerTest, BinaryDataTest) {
 
   auto *disk_manager = new DiskManager(db_name);
   auto *bpm = new BufferPoolManager(buffer_pool_size, disk_manager, k);
-  
+
   page_id_t page_id_temp;
   auto *page0 = bpm->NewPage(&page_id_temp);
 
@@ -90,7 +90,7 @@ TEST(BufferPoolManagerTest, BinaryDataTest) {
   // Shutdown the disk manager and remove the temporary file we created.
   disk_manager->ShutDown();
   remove("test.db");
-  
+
   delete bpm;
   delete disk_manager;
 }

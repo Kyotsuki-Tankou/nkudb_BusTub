@@ -6,12 +6,12 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <iostream>
 #include <memory>
 #include <random>
 #include <set>
 #include <thread>  // NOLINT
 #include <vector>
-#include <iostream>
 
 #include "gtest/gtest.h"
 

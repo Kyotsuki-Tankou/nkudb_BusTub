@@ -1,9 +1,8 @@
 #pragma once
 
-#include "storage/page/page.h"
-#include "common/rwlatch.h"
 #include <memory>
-
+#include "common/rwlatch.h"
+#include "storage/page/page.h"
 
 namespace bustub {
 
@@ -110,8 +109,9 @@ class BasicPageGuard {
   friend class WritePageGuard;
 
   BufferPoolManager *bpm_{nullptr};
-  Page *page_{nullptr};
-  bool is_dirty_{false};
+  // Page *page_{nullptr};
+  Page *page_;
+  bool is_dirty_;//{false};
 };
 
 class ReadPageGuard {
