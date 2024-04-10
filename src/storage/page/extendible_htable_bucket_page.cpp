@@ -20,11 +20,22 @@ namespace bustub {
 
 template <typename K, typename V, typename KC>
 void ExtendibleHTableBucketPage<K, V, KC>::Init(uint32_t max_size) {
-  throw NotImplementedException("ExtendibleHTableBucketPage not implemented");
+  size_ = 0;
+  max_size_ = max_size;
+  for (uint32_t i = 0; i < max_size_; ++i) {
+    array_[i].first = std::nullopt;
+    array_[i].second = std::nullopt;
+  }
 }
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::Lookup(const K &key, V &value, const KC &cmp) const -> bool {
+  for (uint32_t i = 0; i < size_; ++i) {
+    if (array_[i].first && cmp(key, *array_[i].first) == 0) {
+      value = *array_[i].second;
+      return true;
+    }
+  }
   return false;
 }
 
