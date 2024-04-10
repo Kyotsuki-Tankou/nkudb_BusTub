@@ -41,12 +41,39 @@ auto ExtendibleHTableBucketPage<K, V, KC>::Lookup(const K &key, V &value, const 
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::Insert(const K &key, const V &value, const KC &cmp) -> bool {
+  if (size_ == max_size_) {
+    return false;
+  }
+  for (uint32_t i = 0; i < size_; ++i) {
+    if (array_[i].first && cmp(key, *array_[i].first) == 0) {
+      return false;
+    }
+  }
+  for (uint32_t i = 0; i < max_size_; ++i) {
+    if (!array_[i].first) {
+      array_[i].first = key;
+      array_[i].second = value;
+      size_++;
+      return true;
+    }
+  }
   return false;
 }
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::Remove(const K &key, const KC &cmp) -> bool {
-  return false;
+  for (uint32_t i = 0; i < size_; ++i) {
+    if (array_[i].first && cmp(key, *array_[i].first) == 0) {
+      array_[i].first.reset();
+      array_[i].second.reset();
+      for (uint32_t j = i + 1; j < size_; ++j) {
+        array_[j - 1].first = array_[j].first;
+        array_[j - 1].second = array_[j].second;
+      }
+      size_--;
+      return true;
+    }
+  }
 }
 
 template <typename K, typename V, typename KC>

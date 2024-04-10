@@ -111,7 +111,7 @@ class BasicPageGuard {
   BufferPoolManager *bpm_{nullptr};
   // Page *page_{nullptr};
   Page *page_;
-  bool is_dirty_;//{false};
+  bool is_dirty_;  //{false};
 };
 
 class ReadPageGuard {

@@ -241,38 +241,38 @@ auto BufferPoolManager::AllocatePage() -> page_id_t { return next_page_id_++; }
 // auto BufferPoolManager::FetchPageWrite(page_id_t page_id) -> WritePageGuard { return {this, nullptr}; }
 
 // auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard { return {this, nullptr}; }
-  auto BufferPoolManager::FetchPageBasic(page_id_t page_id) -> BasicPageGuard {
-    std::lock_guard<std::mutex> guard(latch_);
-      auto page = FetchPage(page_id);
-      if (page == nullptr) {
-          return BasicPageGuard(this, nullptr);
-      } else {
-          return BasicPageGuard(this, page);
-      }
+auto BufferPoolManager::FetchPageBasic(page_id_t page_id) -> BasicPageGuard {
+  std::lock_guard<std::mutex> guard(latch_);
+  auto page = FetchPage(page_id);
+  if (page == nullptr) {
+    return BasicPageGuard(this, nullptr);
+  } else {
+    return BasicPageGuard(this, page);
   }
+}
 
-  auto BufferPoolManager::FetchPageRead(page_id_t page_id) -> ReadPageGuard {
-    std::lock_guard<std::mutex> guard(latch_);
-      auto page = FetchPage(page_id);
-      if (page == nullptr) {
-          return ReadPageGuard(this, nullptr);
-      } else {
-          return ReadPageGuard(this, page);
-      }
+auto BufferPoolManager::FetchPageRead(page_id_t page_id) -> ReadPageGuard {
+  std::lock_guard<std::mutex> guard(latch_);
+  auto page = FetchPage(page_id);
+  if (page == nullptr) {
+    return ReadPageGuard(this, nullptr);
+  } else {
+    return ReadPageGuard(this, page);
   }
+}
 
-  auto BufferPoolManager::FetchPageWrite(page_id_t page_id) -> WritePageGuard {
-    std::lock_guard<std::mutex> guard(latch_);
-      auto page = FetchPage(page_id);
-      if (page == nullptr) {
-          return WritePageGuard(this, nullptr);
-      } else {
-          return WritePageGuard(this, page);
-      }
+auto BufferPoolManager::FetchPageWrite(page_id_t page_id) -> WritePageGuard {
+  std::lock_guard<std::mutex> guard(latch_);
+  auto page = FetchPage(page_id);
+  if (page == nullptr) {
+    return WritePageGuard(this, nullptr);
+  } else {
+    return WritePageGuard(this, page);
   }
-  auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard {
-    std::lock_guard<std::mutex> guard(latch_);
-  Page* page = NewPage(page_id);
+}
+auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard {
+  std::lock_guard<std::mutex> guard(latch_);
+  Page *page = NewPage(page_id);
   if (page == nullptr) {
     return BasicPageGuard(this, nullptr);
   } else {
