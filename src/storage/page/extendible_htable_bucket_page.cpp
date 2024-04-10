@@ -22,17 +22,14 @@ template <typename K, typename V, typename KC>
 void ExtendibleHTableBucketPage<K, V, KC>::Init(uint32_t max_size) {
   size_ = 0;
   max_size_ = max_size;
-  for (uint32_t i = 0; i < max_size_; ++i) {
-    array_[i].first = std::nullopt;
-    array_[i].second = std::nullopt;
-  }
+  // array_ = new MappingType[max_size_];
 }
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::Lookup(const K &key, V &value, const KC &cmp) const -> bool {
-  for (uint32_t i = 0; i < size_; ++i) {
-    if (array_[i].first && cmp(key, *array_[i].first) == 0) {
-      value = *array_[i].second;
+  for (uint32_t i = 0; i < size_; i++) {
+    if (cmp(array_[i].first, key) == 0) {
+      value = array_[i].second;
       return true;
     }
   }
@@ -41,74 +38,79 @@ auto ExtendibleHTableBucketPage<K, V, KC>::Lookup(const K &key, V &value, const 
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::Insert(const K &key, const V &value, const KC &cmp) -> bool {
-  if (size_ == max_size_) {
+   if (size_ >= max_size_) {
     return false;
   }
-  for (uint32_t i = 0; i < size_; ++i) {
-    if (array_[i].first && cmp(key, *array_[i].first) == 0) {
+  for (uint32_t i = 0; i < size_; i++) {
+    if (cmp(array_[i].first, key) == 0) {
       return false;
     }
   }
-  for (uint32_t i = 0; i < max_size_; ++i) {
-    if (!array_[i].first) {
-      array_[i].first = key;
-      array_[i].second = value;
-      size_++;
-      return true;
-    }
-  }
-  return false;
+  array_[size_] = std::make_pair(key, value);
+  size_++;
+  return true;
 }
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::Remove(const K &key, const KC &cmp) -> bool {
   for (uint32_t i = 0; i < size_; ++i) {
-    if (array_[i].first && cmp(key, *array_[i].first) == 0) {
-      array_[i].first.reset();
-      array_[i].second.reset();
-      for (uint32_t j = i + 1; j < size_; ++j) {
-        array_[j - 1].first = array_[j].first;
-        array_[j - 1].second = array_[j].second;
+      if (cmp(array_[i].first, key) == 0) {
+        array_[i] = array_[size_ - 1];
+        --size_;
+        return true;
       }
-      size_--;
-      return true;
     }
-  }
+  return false;
 }
 
 template <typename K, typename V, typename KC>
 void ExtendibleHTableBucketPage<K, V, KC>::RemoveAt(uint32_t bucket_idx) {
-  throw NotImplementedException("ExtendibleHTableBucketPage not implemented");
+  if (bucket_idx < size_) {
+    array_[bucket_idx] = array_[size_ - 1];
+    --size_;
+  } else {
+    throw std::out_of_range("index out of range");
+  }
 }
+
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::KeyAt(uint32_t bucket_idx) const -> K {
-  return {};
+  if (bucket_idx >= size_) {
+    throw std::out_of_range("Index out of bound");
+  }
+  return array_[bucket_idx].first;
 }
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::ValueAt(uint32_t bucket_idx) const -> V {
-  return {};
+  if (bucket_idx >= size_) {
+    throw std::out_of_range("Index out of bound");
+  }
+  return array_[bucket_idx].second;
 }
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::EntryAt(uint32_t bucket_idx) const -> const std::pair<K, V> & {
-  return array_[0];
+  if (bucket_idx >= size_) {
+    throw std::out_of_range("Index out of bound");
+  }
+  return array_[bucket_idx];
 }
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::Size() const -> uint32_t {
-  return 0;
+  return size_;
 }
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::IsFull() const -> bool {
-  return false;
+  return size_ == max_size_;
 }
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::IsEmpty() const -> bool {
-  return false;
+   return size_ == 0;
 }
 
 template class ExtendibleHTableBucketPage<int, int, IntComparator>;
