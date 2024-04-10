@@ -13,6 +13,7 @@
 #include <memory>
 #include <thread>  // NOLINT
 #include <vector>
+#include <iostream>
 
 #include "buffer/buffer_pool_manager.h"
 #include "common/logger.h"
@@ -113,34 +114,35 @@ TEST(ExtendibleHTableTest, HeaderDirectoryPageSampleTest) {
     // ensure we are hashing into proper bucket based on upper 2 bits
     uint32_t hashes[4]{32768, 1073774592, 2147516416, 3221258240};
     for (uint32_t i = 0; i < 4; i++) {
+      // std::cout<<i<<std::endl;
       ASSERT_EQ(header_page->HashToDirectoryIndex(hashes[i]), i);
     }
 
     header_guard.Drop();
-
+    // std::cout<<111111<<std::endl;
     /************************ DIRECTORY PAGE TEST ************************/
     BasicPageGuard directory_guard = bpm->NewPageGuarded(&directory_page_id);
     auto directory_page = directory_guard.AsMut<ExtendibleHTableDirectoryPage>();
     directory_page->Init(3);
-
+    // std::cout<<222222<<std::endl;
     BasicPageGuard bucket_guard_1 = bpm->NewPageGuarded(&bucket_page_id_1);
     auto bucket_page_1 = bucket_guard_1.AsMut<ExtendibleHTableBucketPage<GenericKey<8>, RID, GenericComparator<8>>>();
     bucket_page_1->Init(10);
-
+    // std::cout<<333333<<std::endl;
     BasicPageGuard bucket_guard_2 = bpm->NewPageGuarded(&bucket_page_id_2);
     auto bucket_page_2 = bucket_guard_2.AsMut<ExtendibleHTableBucketPage<GenericKey<8>, RID, GenericComparator<8>>>();
     bucket_page_2->Init(10);
-
+    // std::cout<<444444<<std::endl;
     BasicPageGuard bucket_guard_3 = bpm->NewPageGuarded(&bucket_page_id_3);
     auto bucket_page_3 = bucket_guard_3.AsMut<ExtendibleHTableBucketPage<GenericKey<8>, RID, GenericComparator<8>>>();
     bucket_page_3->Init(10);
-
+    // std::cout<<555555<<std::endl;
     BasicPageGuard bucket_guard_4 = bpm->NewPageGuarded(&bucket_page_id_4);
     auto bucket_page_4 = bucket_guard_4.AsMut<ExtendibleHTableBucketPage<GenericKey<8>, RID, GenericComparator<8>>>();
     bucket_page_4->Init(10);
 
     directory_page->SetBucketPageId(0, bucket_page_id_1);
-
+    // std::cout<<666666<<std::endl;
     /*
     ======== DIRECTORY (global_depth_: 0) ========
     | bucket_idx | page_id | local_depth |
@@ -151,7 +153,7 @@ TEST(ExtendibleHTableTest, HeaderDirectoryPageSampleTest) {
     directory_page->VerifyIntegrity();
     ASSERT_EQ(directory_page->Size(), 1);
     ASSERT_EQ(directory_page->GetBucketPageId(0), bucket_page_id_1);
-
+    // std::cout<<777777<<std::endl;
     // grow the directory, local depths should change!
     directory_page->SetLocalDepth(0, 1);
     directory_page->IncrGlobalDepth();
@@ -170,7 +172,7 @@ TEST(ExtendibleHTableTest, HeaderDirectoryPageSampleTest) {
     ASSERT_EQ(directory_page->Size(), 2);
     ASSERT_EQ(directory_page->GetBucketPageId(0), bucket_page_id_1);
     ASSERT_EQ(directory_page->GetBucketPageId(1), bucket_page_id_2);
-
+    // std::cout<<888888<<std::endl;
     for (uint32_t i = 0; i < 100; i++) {
       ASSERT_EQ(directory_page->HashToBucketIndex(i), i % 2);
     }
@@ -190,12 +192,17 @@ TEST(ExtendibleHTableTest, HeaderDirectoryPageSampleTest) {
     */
 
     directory_page->VerifyIntegrity();
+    std::cout<<1112<<std::endl;
     ASSERT_EQ(directory_page->Size(), 4);
+    std::cout<<2222<<std::endl;
     ASSERT_EQ(directory_page->GetBucketPageId(0), bucket_page_id_1);
+    std::cout<<3333<<std::endl;
     ASSERT_EQ(directory_page->GetBucketPageId(1), bucket_page_id_2);
+    std::cout<<4444<<std::endl;
     ASSERT_EQ(directory_page->GetBucketPageId(2), bucket_page_id_3);
+    std::cout<<5555<<std::endl;
     ASSERT_EQ(directory_page->GetBucketPageId(3), bucket_page_id_2);
-
+    std::cout<<999999<<std::endl;
     for (uint32_t i = 0; i < 100; i++) {
       ASSERT_EQ(directory_page->HashToBucketIndex(i), i % 4);
     }

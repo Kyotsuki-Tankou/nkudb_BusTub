@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <iostream>
 #include "storage/page/extendible_htable_header_page.h"
 
 #include "common/exception.h"
@@ -25,7 +26,8 @@ void ExtendibleHTableHeaderPage::Init(uint32_t max_depth) {
 }
 
 auto ExtendibleHTableHeaderPage::HashToDirectoryIndex(uint32_t hash) const -> uint32_t {
-  return hash & ((1u << max_depth_) - 1);
+  std::cout<<((hash & (~((1u << (32-max_depth_)) - 1)))>>(32-max_depth_))<<"\n";
+  return ((hash & (~((1u << (32-max_depth_)) - 1)))>>(32-max_depth_));
 }
 
 auto ExtendibleHTableHeaderPage::GetDirectoryPageId(uint32_t directory_idx) const -> uint32_t {
