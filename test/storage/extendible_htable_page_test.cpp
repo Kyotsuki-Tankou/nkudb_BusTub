@@ -142,6 +142,7 @@ TEST(ExtendibleHTableTest, HeaderDirectoryPageSampleTest) {
     bucket_page_4->Init(10);
 
     directory_page->SetBucketPageId(0, bucket_page_id_1);
+    // directory_page->PrintDirectory();
     // std::cout<<666666<<std::endl;
     /*
     ======== DIRECTORY (global_depth_: 0) ========
@@ -159,7 +160,7 @@ TEST(ExtendibleHTableTest, HeaderDirectoryPageSampleTest) {
     directory_page->IncrGlobalDepth();
     directory_page->SetBucketPageId(1, bucket_page_id_2);
     directory_page->SetLocalDepth(1, 1);
-
+    // directory_page->PrintDirectory();
     /*
     ======== DIRECTORY (global_depth_: 1) ========
     | bucket_idx | page_id | local_depth |
@@ -169,18 +170,24 @@ TEST(ExtendibleHTableTest, HeaderDirectoryPageSampleTest) {
     */
 
     directory_page->VerifyIntegrity();
+    // directory_page->PrintDirectory();
     ASSERT_EQ(directory_page->Size(), 2);
+    // directory_page->PrintDirectory();
     ASSERT_EQ(directory_page->GetBucketPageId(0), bucket_page_id_1);
+    // directory_page->PrintDirectory();
     ASSERT_EQ(directory_page->GetBucketPageId(1), bucket_page_id_2);
+    // directory_page->PrintDirectory();
     // std::cout<<888888<<std::endl;
     for (uint32_t i = 0; i < 100; i++) {
       ASSERT_EQ(directory_page->HashToBucketIndex(i), i % 2);
     }
-
+    directory_page->PrintDirectory();
     directory_page->SetLocalDepth(0, 2);
+    directory_page->PrintDirectory();
     directory_page->IncrGlobalDepth();
+    directory_page->PrintDirectory();
     directory_page->SetBucketPageId(2, bucket_page_id_3);
-
+    directory_page->PrintDirectory();
     /*
     ======== DIRECTORY (global_depth_: 2) ========
     | bucket_idx | page_id | local_depth |
@@ -192,17 +199,17 @@ TEST(ExtendibleHTableTest, HeaderDirectoryPageSampleTest) {
     */
 
     directory_page->VerifyIntegrity();
-    std::cout<<1112<<std::endl;
+    // std::cout<<1112<<std::endl;
     ASSERT_EQ(directory_page->Size(), 4);
-    std::cout<<2222<<std::endl;
+    // std::cout<<2222<<std::endl;
     ASSERT_EQ(directory_page->GetBucketPageId(0), bucket_page_id_1);
-    std::cout<<3333<<std::endl;
+    // std::cout<<3333<<std::endl;
     ASSERT_EQ(directory_page->GetBucketPageId(1), bucket_page_id_2);
-    std::cout<<4444<<std::endl;
+    // std::cout<<4444<<std::endl;
     ASSERT_EQ(directory_page->GetBucketPageId(2), bucket_page_id_3);
-    std::cout<<5555<<std::endl;
+    // std::cout<<5555<<std::endl;
     ASSERT_EQ(directory_page->GetBucketPageId(3), bucket_page_id_2);
-    std::cout<<999999<<std::endl;
+    // std::cout<<999999<<std::endl;
     for (uint32_t i = 0; i < 100; i++) {
       ASSERT_EQ(directory_page->HashToBucketIndex(i), i % 4);
     }
