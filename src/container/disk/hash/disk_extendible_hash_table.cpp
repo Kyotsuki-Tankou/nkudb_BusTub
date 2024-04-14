@@ -78,7 +78,58 @@ auto DiskExtendibleHashTable<K, V, KC>::GetValue(const K &key, std::vector<V> *r
 
 template <typename K, typename V, typename KC>
 auto DiskExtendibleHashTable<K, V, KC>::Insert(const K &key, const V &value, Transaction *transaction) -> bool {
-  return false;
+  //level1 to level2
+  auto header_guard=bpm->FetchPageWrite(header_page_id_);
+  auto header_page=header_guard.AsMut<ExtendibleHTableHeaderPage>();
+  uint32_t val=Hash(key);
+  uint32_t dir_index=header_page->HashToDirectoryIndex(hash);
+  auto dir_id=header_page->GetDirectoryPageId(dir_index);
+  if(dir_id==INVALID_PAGE_ID)
+  {
+    auto success=InsertToNewDirectory(header_page,dir_index,val,key,value);
+    return success;
+  }
+
+  //level2 to level3
+  header_guard.Drop();
+  WritePageGuard dir_guard=bom_->FetchPageWrite(dir_id);
+  auto dir_page=directory_guard.AsMut<ExtendibleHTableDirectoryPage>();
+  auto bucket_index=dir_page->HashToBucketIndex(hash);
+  auto bucket_id=dir_page->GetBucketPageId(bucket_index);
+  if(bucket_id==INVALID_PAGE_ID)
+  {
+    auto success=InsertToNewBucket(dir_page,bucket_index,key,value);
+    return success;
+  }
+  
+  //bucket full or not
+  bool success=false;
+  WritePageGuard bucket_guard=bpm->FetchPageWrite(bucket_id);
+  auto bucket_page=bucket_guard.AsMut<ExtendibleHTableBucketPage<K,V,KV>>();
+  V tmp;
+  if(bucket_page->Lookup(key,tmp,cmp_))  return false;
+  if(!bucket_page->IsFull())
+  {
+    success=bucket_page->Insert(key,value,cmp_);
+    return success;
+  }
+  while(!success&&bucket_page->IsFull())
+  {
+    if(dir_page->GetGlobalDepth()==dir_page->GetLocalDepth(bucket_index))
+    {
+      if(dir_page->GetGlobalDepth()==dir_page->GetMaxDepth())  return false;
+      dir_page->IncrGlobalDepth();
+    }
+    page_id_t new_id;
+    auto tmp_bucket_guard=bpm_->NewPageGuarded(&new_id);
+    auto new_bucket_guard=tmp_bucket_guard.UpgradeWrite();
+    auto new_bucket_page=new_bucket_guard.AsMut<ExtendibleHTableBucketPage<K,V,KC>>();
+    new_bucket_page->Init(bucket_max_size_);
+    directory_page->IncrLocalDepth(bucket_index);
+    auto new_localDepth=dir_page->GetLocalDepth(bucket_index);
+    auto localDepthMask=dir_page->GetLocalDepthMask(bucket_index);
+    auto new_bucket_id=UpdateDirectoryMapping(directory_page,bucket_index,new_id,new_localDepth,localDepthMask);
+  }
 }
 
 template <typename K, typename V, typename KC>
