@@ -50,7 +50,26 @@ DiskExtendibleHashTable<K, V, KC>::DiskExtendibleHashTable(const std::string &na
 template <typename K, typename V, typename KC>
 auto DiskExtendibleHashTable<K, V, KC>::GetValue(const K &key, std::vector<V> *result, Transaction *transaction) const
     -> bool {
-  return false;
+  auto header_guard=bpm_->FetchPageRead(header_page_id_);
+  auto header_page=header_guard.As<ExtendibleHTableHeaderPage>();
+  uint32_t val=Hash(key);
+  auto index=header_page->HashToDirectoryIndex(val);
+  page_id_t dir_page_id=header_page->GetDirectoryPageId(index);
+  if(dir_page_id==INVALID_PAGE_ID)  return false;
+
+  ReadPageGuard dir_guard=bpm_->FetchPageRead(dir_page_id);
+  auto dir_page=dir_guard.As<ExtendibleHTableDirectoryPage>();
+  auto bucket_index=dir_page->HashToBucketIndex(val);
+  auto bucket_id=dir_page->GetBucketPageId(bucket_index);
+  if(bucket_id==INVALID_PAGE_ID)  return false;
+
+  ReadPageGuard bucket_guard=bpm_->FetchPageRead(bucket_id);
+  V res;
+  auto bucket_page=bucket_guard.As<ExtendibleHTableBucketPage<K,V,KC>>();
+  bool success=bucket_page->Lookup(key,res,cmp_);
+  if(!success)  return false;
+  result->push_back(res);
+  return true;
 }
 
 /*****************************************************************************
