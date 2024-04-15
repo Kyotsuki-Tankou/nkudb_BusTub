@@ -38,7 +38,7 @@ auto ExtendibleHTableBucketPage<K, V, KC>::Lookup(const K &key, V &value, const 
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::Insert(const K &key, const V &value, const KC &cmp) -> bool {
-   if (size_ >= max_size_) {
+  if (size_ >= max_size_) {
     return false;
   }
   for (uint32_t i = 0; i < size_; i++) {
@@ -54,12 +54,12 @@ auto ExtendibleHTableBucketPage<K, V, KC>::Insert(const K &key, const V &value, 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::Remove(const K &key, const KC &cmp) -> bool {
   for (uint32_t i = 0; i < size_; ++i) {
-      if (cmp(array_[i].first, key) == 0) {
-        array_[i] = array_[size_ - 1];
-        --size_;
-        return true;
-      }
+    if (cmp(array_[i].first, key) == 0) {
+      array_[i] = array_[size_ - 1];
+      --size_;
+      return true;
     }
+  }
   return false;
 }
 
@@ -72,7 +72,6 @@ void ExtendibleHTableBucketPage<K, V, KC>::RemoveAt(uint32_t bucket_idx) {
     throw std::out_of_range("index out of range");
   }
 }
-
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::KeyAt(uint32_t bucket_idx) const -> K {
@@ -110,7 +109,7 @@ auto ExtendibleHTableBucketPage<K, V, KC>::IsFull() const -> bool {
 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::IsEmpty() const -> bool {
-   return size_ == 0;
+  return size_ == 0;
 }
 
 template class ExtendibleHTableBucketPage<int, int, IntComparator>;

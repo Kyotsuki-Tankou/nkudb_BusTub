@@ -10,10 +10,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <iostream>
 #include <memory>
 #include <thread>  // NOLINT
 #include <vector>
-#include <iostream>
 
 #include "buffer/buffer_pool_manager.h"
 #include "common/logger.h"

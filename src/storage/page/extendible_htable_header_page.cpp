@@ -10,8 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include <iostream>
 #include "storage/page/extendible_htable_header_page.h"
+#include <iostream>
 
 #include "common/exception.h"
 
@@ -26,15 +26,16 @@ void ExtendibleHTableHeaderPage::Init(uint32_t max_depth) {
 }
 
 auto ExtendibleHTableHeaderPage::HashToDirectoryIndex(uint32_t hash) const -> uint32_t {
-  std::cout<<((hash & (~((1u << (32-max_depth_)) - 1)))>>(32-max_depth_))<<"\n";
-  return ((hash & (~((1u << (32-max_depth_)) - 1)))>>(32-max_depth_));
+  std::cout << ((hash & (~((1u << (32 - max_depth_)) - 1))) >> (32 - max_depth_)) << "\n";
+  return ((hash & (~((1u << (32 - max_depth_)) - 1))) >> (32 - max_depth_));
 }
 
 auto ExtendibleHTableHeaderPage::GetDirectoryPageId(uint32_t directory_idx) const -> uint32_t {
   if (directory_idx >= (1u << max_depth_)) {
-  throw std::out_of_range("Out of range");
+    throw std::out_of_range("Out of range");
   }
-  return directory_page_ids_[directory_idx];}
+  return directory_page_ids_[directory_idx];
+}
 
 void ExtendibleHTableHeaderPage::SetDirectoryPageId(uint32_t directory_idx, page_id_t directory_page_id) {
   if (directory_idx >= (1u << max_depth_)) {

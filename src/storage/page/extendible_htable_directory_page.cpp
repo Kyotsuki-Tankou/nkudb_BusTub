@@ -32,9 +32,11 @@ void ExtendibleHTableDirectoryPage::Init(uint32_t max_depth) {
   }
 }
 
-auto ExtendibleHTableDirectoryPage::HashToBucketIndex(uint32_t hash) const -> uint32_t { return hash & ((1u << global_depth_) - 1); }
+auto ExtendibleHTableDirectoryPage::HashToBucketIndex(uint32_t hash) const -> uint32_t {
+  return hash & ((1u << global_depth_) - 1);
+}
 
-auto ExtendibleHTableDirectoryPage::GetBucketPageId(uint32_t bucket_idx) const -> page_id_t { 
+auto ExtendibleHTableDirectoryPage::GetBucketPageId(uint32_t bucket_idx) const -> page_id_t {
   if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
     throw std::out_of_range("Bucket index out of range");
   }
@@ -48,13 +50,17 @@ void ExtendibleHTableDirectoryPage::SetBucketPageId(uint32_t bucket_idx, page_id
   bucket_page_ids_[bucket_idx] = bucket_page_id;
 }
 
-auto ExtendibleHTableDirectoryPage::GetSplitImageIndex(uint32_t bucket_idx) const -> uint32_t { return bucket_idx ^ (1u << (local_depths_[bucket_idx] - 1)); }
+auto ExtendibleHTableDirectoryPage::GetSplitImageIndex(uint32_t bucket_idx) const -> uint32_t {
+  return bucket_idx ^ (1u << (local_depths_[bucket_idx] - 1));
+}
 
-auto ExtendibleHTableDirectoryPage::GetGlobalDepthMask() const -> uint32_t {return (1u << global_depth_) - 1;}
+auto ExtendibleHTableDirectoryPage::GetGlobalDepthMask() const -> uint32_t { return (1u << global_depth_) - 1; }
 
-auto ExtendibleHTableDirectoryPage::GetLocalDepthMask(uint32_t bucket_idx) const -> uint32_t {return (1u << local_depths_[bucket_idx]) - 1;}
+auto ExtendibleHTableDirectoryPage::GetLocalDepthMask(uint32_t bucket_idx) const -> uint32_t {
+  return (1u << local_depths_[bucket_idx]) - 1;
+}
 
-auto ExtendibleHTableDirectoryPage::GetGlobalDepth() const -> uint32_t { return global_depth_;}
+auto ExtendibleHTableDirectoryPage::GetGlobalDepth() const -> uint32_t { return global_depth_; }
 
 void ExtendibleHTableDirectoryPage::IncrGlobalDepth() {
   if (global_depth_ >= max_depth_) {
@@ -75,7 +81,7 @@ void ExtendibleHTableDirectoryPage::DecrGlobalDepth() {
   --global_depth_;
 }
 
-auto ExtendibleHTableDirectoryPage::CanShrink() -> bool { 
+auto ExtendibleHTableDirectoryPage::CanShrink() -> bool {
   if (global_depth_ == 0) {
     return false;
   }
@@ -87,13 +93,13 @@ auto ExtendibleHTableDirectoryPage::CanShrink() -> bool {
   return true;
 }
 
-auto ExtendibleHTableDirectoryPage::Size() const -> uint32_t {  return 1 << global_depth_; }
+auto ExtendibleHTableDirectoryPage::Size() const -> uint32_t { return 1 << global_depth_; }
 
-auto ExtendibleHTableDirectoryPage::GetLocalDepth(uint32_t bucket_idx) const -> uint32_t { 
+auto ExtendibleHTableDirectoryPage::GetLocalDepth(uint32_t bucket_idx) const -> uint32_t {
   if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
     throw std::out_of_range("Bucket index is out of range");
   }
-  return local_depths_[bucket_idx]; 
+  return local_depths_[bucket_idx];
 }
 
 void ExtendibleHTableDirectoryPage::SetLocalDepth(uint32_t bucket_idx, uint8_t local_depth) {
