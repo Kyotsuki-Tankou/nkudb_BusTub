@@ -82,7 +82,7 @@ auto DiskExtendibleHashTable<K, V, KC>::Insert(const K &key, const V &value, Tra
   auto header_guard=bpm->FetchPageWrite(header_page_id_);
   auto header_page=header_guard.AsMut<ExtendibleHTableHeaderPage>();
   uint32_t val=Hash(key);
-  uint32_t dir_index=header_page->HashToDirectoryIndex(hash);
+  uint32_t dir_index=header_page->HashToDirectoryIndex(val);
   auto dir_id=header_page->GetDirectoryPageId(dir_index);
   if(dir_id==INVALID_PAGE_ID)
   {
@@ -94,7 +94,7 @@ auto DiskExtendibleHashTable<K, V, KC>::Insert(const K &key, const V &value, Tra
   header_guard.Drop();
   WritePageGuard dir_guard=bom_->FetchPageWrite(dir_id);
   auto dir_page=directory_guard.AsMut<ExtendibleHTableDirectoryPage>();
-  auto bucket_index=dir_page->HashToBucketIndex(hash);
+  auto bucket_index=dir_page->HashToBucketIndex(val);
   auto bucket_id=dir_page->GetBucketPageId(bucket_index);
   if(bucket_id==INVALID_PAGE_ID)
   {
@@ -129,7 +129,50 @@ auto DiskExtendibleHashTable<K, V, KC>::Insert(const K &key, const V &value, Tra
     auto new_localDepth=dir_page->GetLocalDepth(bucket_index);
     auto localDepthMask=dir_page->GetLocalDepthMask(bucket_index);
     auto new_bucket_id=UpdateDirectoryMapping(directory_page,bucket_index,new_id,new_localDepth,localDepthMask);
+    
+    //rehash
+    page_id_t rehash_id;
+    std::vector<uint32_t> remove_array;
+    for(int i=0;i<bucket_page->Size();i++)
+    {
+      auto k=bucket_page->KeyAt(i);
+      auto v=bucket_page->ValueAt(i);
+      uint32_t h=hash_fn_.GetHash(k);
+      auto rehash_idx=dir_page->HashToBucketIndex(h);
+      rehash_id=dir_page->GetBucketPageId(rehash_idx);
+      if(rehash_id==new_id)
+      {
+        new_bucket_page->Insert(k,v,cmp_);
+        remove_array.push_back(i);
+      }
+    }
+    auto flag=0;
+    for(auto &remove_id:remove_array)
+    {
+      bucket_page->RemoveAt(remove_id-helper);
+      helper++;
+    }
+
+    //insert
+    bucket_index=dir_page->HashToBucketIndex(val);
+    rehash_id=dir_page>GetBucketPageId(bucket_index);
+    if(rehash_id==new_id)
+    {
+      success=new_bucket_page->Insert(key, value, cmp_);
+      if(!success&&new_bucket_page->Isfull())
+      {
+        bucket_guard=std::move(new_bucket_guard);
+        bucket_id=new_bucket_page;
+        bucket_index=new_bucket_index;
+      }
+      else
+      {
+        success=bucket_page->Insert(key.value,cmp);
+      }
+    }
+    return success;
   }
+
 }
 
 template <typename K, typename V, typename KC>
