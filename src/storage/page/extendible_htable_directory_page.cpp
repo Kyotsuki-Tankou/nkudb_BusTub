@@ -37,16 +37,16 @@ auto ExtendibleHTableDirectoryPage::HashToBucketIndex(uint32_t hash) const -> ui
 }
 
 auto ExtendibleHTableDirectoryPage::GetBucketPageId(uint32_t bucket_idx) const -> page_id_t {
-  if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
-    throw std::out_of_range("Bucket index out of range");
-  }
+  // if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
+  //   throw std::out_of_range("Bucket index out of range");
+  // }
   return bucket_page_ids_[bucket_idx];
 }
 
 void ExtendibleHTableDirectoryPage::SetBucketPageId(uint32_t bucket_idx, page_id_t bucket_page_id) {
-  if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
-    throw std::out_of_range("Bucket index out of range");
-  }
+  // if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
+  //   throw std::out_of_range("Bucket index out of range");
+  // }
   bucket_page_ids_[bucket_idx] = bucket_page_id;
 }
 
@@ -63,9 +63,9 @@ auto ExtendibleHTableDirectoryPage::GetLocalDepthMask(uint32_t bucket_idx) const
 auto ExtendibleHTableDirectoryPage::GetGlobalDepth() const -> uint32_t { return global_depth_; }
 
 void ExtendibleHTableDirectoryPage::IncrGlobalDepth() {
-  if (global_depth_ >= max_depth_) {
-    throw std::out_of_range("depth out of maximum depth");
-  }
+  // if (global_depth_ >= max_depth_) {
+  //   throw std::out_of_range("depth out of maximum depth");
+  // }
   uint32_t old_size = 1 << global_depth_;
   ++global_depth_;
   for (uint32_t i = 0; i < old_size; ++i) {
@@ -75,9 +75,9 @@ void ExtendibleHTableDirectoryPage::IncrGlobalDepth() {
 }
 
 void ExtendibleHTableDirectoryPage::DecrGlobalDepth() {
-  if (global_depth_ == 0) {
-    throw std::out_of_range("depth already at minimum depth");
-  }
+  // if (global_depth_ == 0) {
+  //   throw std::out_of_range("depth already at minimum depth");
+  // }
   --global_depth_;
 }
 
@@ -96,39 +96,39 @@ auto ExtendibleHTableDirectoryPage::CanShrink() -> bool {
 auto ExtendibleHTableDirectoryPage::Size() const -> uint32_t { return 1 << global_depth_; }
 
 auto ExtendibleHTableDirectoryPage::GetLocalDepth(uint32_t bucket_idx) const -> uint32_t {
-  if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
-    throw std::out_of_range("Bucket index is out of range");
-  }
+  // if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
+  //   throw std::out_of_range("Bucket index is out of range");
+  // }
   return local_depths_[bucket_idx];
 }
 
 void ExtendibleHTableDirectoryPage::SetLocalDepth(uint32_t bucket_idx, uint8_t local_depth) {
-  if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
-    throw std::out_of_range("Bucket index is out of range");
-  }
-  if (local_depth == 0) {
-    throw std::invalid_argument("Local depth cannot be zero");
-  }
+  // if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
+  //   throw std::out_of_range("Bucket index is out of range");
+  // }
+  // if (local_depth == 0) {
+  //   throw std::invalid_argument("Local depth cannot be zero");
+  // }
   local_depths_[bucket_idx] = local_depth;
 }
 
 void ExtendibleHTableDirectoryPage::IncrLocalDepth(uint32_t bucket_idx) {
-  if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
-    throw std::out_of_range("Bucket index is out of range");
-  }
-  if (local_depths_[bucket_idx] == 0) {
-    throw std::invalid_argument("Local depth cannot increase from zero");
-  }
+  // if (bucket_idx >= HTABLE_DIRECTORY_ARRAY_SIZE) {
+  //   throw std::out_of_range("Bucket index is out of range");
+  // }
+  // if (local_depths_[bucket_idx] == 0) {
+  //   throw std::invalid_argument("Local depth cannot increase from zero");
+  // }
   ++local_depths_[bucket_idx];
 }
 
 void ExtendibleHTableDirectoryPage::DecrLocalDepth(uint32_t bucket_idx) {
-  if (bucket_idx >= (1u << global_depth_)) {
-    throw std::out_of_range("Bucket out of range");
-  }
-  if (local_depths_[bucket_idx] == 0) {
-    throw std::out_of_range("already at minimum depth");
-  }
+  // if (bucket_idx >= (1u << global_depth_)) {
+  //   throw std::out_of_range("Bucket out of range");
+  // }
+  // if (local_depths_[bucket_idx] == 0) {
+  //   throw std::out_of_range("already at minimum depth");
+  // }
   --local_depths_[bucket_idx];
 }
 

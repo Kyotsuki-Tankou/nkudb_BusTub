@@ -92,6 +92,7 @@ auto DiskExtendibleHashTable<K, V, KC>::Insert(const K &key, const V &value, Tra
   auto dir_id = header_page->GetDirectoryPageId(dir_index);
   if (int(dir_id) == int(INVALID_PAGE_ID)) {
     auto success = InsertToNewDirectory(header_page, dir_index, val, key, value);
+    // std::cout<<"successIns1"<<success<<std::endl;
     return success;
   }
 
@@ -103,6 +104,7 @@ auto DiskExtendibleHashTable<K, V, KC>::Insert(const K &key, const V &value, Tra
   auto bucket_id = dir_page->GetBucketPageId(bucket_index);
   if (bucket_id == INVALID_PAGE_ID) {
     auto success = InsertToNewBucket(dir_page, bucket_index, key, value);
+    // std::cout<<"successIns2"<<success<<std::endl;
     return success;
   }
 
@@ -138,7 +140,7 @@ auto DiskExtendibleHashTable<K, V, KC>::Insert(const K &key, const V &value, Tra
     for (uint32_t i = 0; i < bucket_page->Size(); i++) {
       auto k = bucket_page->KeyAt(i);
       auto v = bucket_page->ValueAt(i);
-      uint32_t h = hash_fn_.GetHash(k);
+      uint32_t h = Hash(k);
       auto rehash_idx = dir_page->HashToBucketIndex(h);
       rehash_id = dir_page->GetBucketPageId(rehash_idx);
       if (rehash_id == new_id) {
@@ -151,15 +153,18 @@ auto DiskExtendibleHashTable<K, V, KC>::Insert(const K &key, const V &value, Tra
       bucket_page->RemoveAt(remove_id - flag);
       flag++;
     }
-
     // insert
+    bucket_index = dir_page->HashToBucketIndex(val);
     rehash_id = dir_page->GetBucketPageId(bucket_index);
     if (rehash_id == new_id) {
       success = new_bucket_page->Insert(key, value, cmp_);
       if (!success && new_bucket_page->IsFull()) {
+        // std::cout<<1123<<std::endl;
         // continue the loop to split the new bucket page
         bucket_guard = std::move(new_bucket_guard);
         bucket_id = new_id;
+        bucket_page = new_bucket_page;
+        bucket_index = new_bucket_idx;
       }
     } else {
       success = bucket_page->Insert(key, value, cmp_);
@@ -177,21 +182,28 @@ auto DiskExtendibleHashTable<K, V, KC>::InsertToNewDirectory(ExtendibleHTableHea
   auto dir_page = dir_guard.AsMut<ExtendibleHTableDirectoryPage>();
   dir_page->Init(directory_max_depth_);
   header->SetDirectoryPageId(directory_idx, dir_page_id);
-  auto bucket_idx = dir_page->HashToBucketIndex(hash);
-  return InsertToNewBucket(dir_page, bucket_idx, key, value);
+  auto bucket_idx = dir_page->HashToBucketIndex(hash); 
+  int success=InsertToNewBucket(dir_page, bucket_idx, key, value);
+  return success;
 }
 
 template <typename K, typename V, typename KC>
 auto DiskExtendibleHashTable<K, V, KC>::InsertToNewBucket(ExtendibleHTableDirectoryPage *directory, uint32_t bucket_idx,
                                                           const K &key, const V &value) -> bool {
   page_id_t bucket_id;
+  // std::cout<<1111<<std::endl;
   auto tmp_guard = bpm_->NewPageGuarded(&bucket_id);
   auto bucket_guard = tmp_guard.UpgradeWrite();
   auto bucket_page = bucket_guard.AsMut<ExtendibleHTableBucketPage<K, V, KC>>();
+  // std::cout<<2222<<std::endl;
   bucket_page->Init(bucket_max_size_);
+  // std::cout<<11111<<std::endl;
   directory->SetBucketPageId(bucket_idx, bucket_id);
+  // std::cout<<22222<<std::endl;
   directory->SetLocalDepth(bucket_idx, 0);
+  // std::cout<<3333<<std::endl;
   auto insert_success = bucket_page->Insert(key, value, cmp_);
+  // std::cout<<"successNB"<<insert_success<<std::endl;
   return insert_success;
 }
 
@@ -199,21 +211,35 @@ template <typename K, typename V, typename KC>
 uint32_t DiskExtendibleHashTable<K, V, KC>::UpdateDirectoryMapping(ExtendibleHTableDirectoryPage *directory,
                                                                    uint32_t new_bucket_idx, page_id_t new_bucket_page_id,
                                                                    uint32_t new_local_depth, uint32_t local_depth_mask) {
-    uint32_t old_bucket_count = 1 << (new_local_depth - 1);
-    uint32_t old_bucket_idx = local_depth_mask & new_bucket_idx;
-    uint32_t distance = 1u << new_local_depth;
+    // uint32_t old_bucket_count = 1 << (new_local_depth - 1);
+    // uint32_t old_bucket_idx = local_depth_mask & new_bucket_idx;
+    // uint32_t distance = 1u << new_local_depth;
 
-    uint32_t new_first_bucket_idx = old_bucket_idx + (new_bucket_idx >= old_bucket_count ? old_bucket_count : 0);
+    // uint32_t new_first_bucket_idx = old_bucket_idx + (new_bucket_idx >= old_bucket_count ? old_bucket_count : 0);
 
-    uint32_t prime_idx = new_first_bucket_idx;
+    // uint32_t prime_idx = new_first_bucket_idx;
 
+    // for (uint32_t i = new_first_bucket_idx; i < directory->Size(); i += distance) {
+    //     directory->SetBucketPageId(i, new_bucket_page_id);
+    //     directory->SetLocalDepth(i, new_local_depth);
+    //     directory->SetLocalDepth(prime_idx, new_local_depth);
+    //     assert(directory->GetLocalDepth(i) <= directory->GetGlobalDepth());
+    //     assert(directory->GetLocalDepth(prime_idx) <= directory->GetGlobalDepth());
+    //     prime_idx += distance;
+    // }
+    // return new_first_bucket_idx;
+    auto new_first_bucket_idx = local_depth_mask & new_bucket_idx;
+    auto prime_idx = new_first_bucket_idx;
+    uint32_t distance = pow(2, new_local_depth);
+    new_first_bucket_idx = (new_first_bucket_idx >> (new_local_depth - 1)) == 0 ? (new_first_bucket_idx + (distance / 2))
+                                                                                : (new_first_bucket_idx - (distance / 2));
     for (uint32_t i = new_first_bucket_idx; i < directory->Size(); i += distance) {
-        directory->SetBucketPageId(i, new_bucket_page_id);
-        directory->SetLocalDepth(i, new_local_depth);
-        directory->SetLocalDepth(prime_idx, new_local_depth);
-        assert(directory->GetLocalDepth(i) <= directory->GetGlobalDepth());
-        assert(directory->GetLocalDepth(prime_idx) <= directory->GetGlobalDepth());
-        prime_idx += distance;
+      directory->SetBucketPageId(i, new_bucket_page_id);
+      directory->SetLocalDepth(i, new_local_depth);
+      directory->SetLocalDepth(prime_idx, new_local_depth);
+      assert(directory->GetLocalDepth(i) <= directory->GetGlobalDepth());
+      assert(directory->GetLocalDepth(prime_idx) <= directory->GetGlobalDepth());
+      prime_idx += distance;
     }
     return new_first_bucket_idx;
 }
