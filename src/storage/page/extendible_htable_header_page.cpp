@@ -1,14 +1,14 @@
-//===----------------------------------------------------------------------===//
-//
-//                         BusTub
-//
-// extendible_htable_header_page.cpp
-//
-// Identification: src/storage/page/extendible_htable_header_page.cpp
-//
-// Copyright (c) 2015-2023, Carnegie Mellon University Database Group
-//
-//===----------------------------------------------------------------------===//
+// //===----------------------------------------------------------------------===//
+// //
+// //                         BusTub
+// //
+// // extendible_htable_header_page.cpp
+// //
+// // Identification: src/storage/page/extendible_htable_header_page.cpp
+// //
+// // Copyright (c) 2015-2023, Carnegie Mellon University Database Group
+// //
+// //===----------------------------------------------------------------------===//
 
 #include "storage/page/extendible_htable_header_page.h"
 #include <iostream>
@@ -26,8 +26,8 @@ void ExtendibleHTableHeaderPage::Init(uint32_t max_depth) {
 }
 
 auto ExtendibleHTableHeaderPage::HashToDirectoryIndex(uint32_t hash) const -> uint32_t {
-  std::cout << ((hash & (~((1u << (32 - max_depth_)) - 1))) >> (32 - max_depth_)) << "\n";
-  return ((hash & (~((1u << (32 - max_depth_)) - 1))) >> (32 - max_depth_));
+  std::cout << ((max_depth_ == 0) ? 0 : hash >> (32 - max_depth_)) << "\n";
+  return (max_depth_ == 0) ? 0 : hash >> (32 - max_depth_); ;
 }
 
 auto ExtendibleHTableHeaderPage::GetDirectoryPageId(uint32_t directory_idx) const -> uint32_t {
