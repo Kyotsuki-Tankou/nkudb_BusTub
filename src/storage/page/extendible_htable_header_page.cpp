@@ -19,7 +19,6 @@ namespace bustub {
 
 void ExtendibleHTableHeaderPage::Init(uint32_t max_depth) {
   max_depth_ = max_depth;
-  // Initialize directory_page_ids_ array
   for (uint32_t i = 0; i < (1u << max_depth_); i++) {
     directory_page_ids_[i] = INVALID_PAGE_ID;
   }
@@ -27,7 +26,7 @@ void ExtendibleHTableHeaderPage::Init(uint32_t max_depth) {
 
 auto ExtendibleHTableHeaderPage::HashToDirectoryIndex(uint32_t hash) const -> uint32_t {
   std::cout << ((max_depth_ == 0) ? 0 : hash >> (32 - max_depth_)) << "\n";
-  return (max_depth_ == 0) ? 0 : hash >> (32 - max_depth_); ;
+  return (max_depth_ == 0) ? 0 : hash >> (32 - max_depth_);
 }
 
 auto ExtendibleHTableHeaderPage::GetDirectoryPageId(uint32_t directory_idx) const -> uint32_t {

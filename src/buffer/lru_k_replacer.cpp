@@ -19,7 +19,8 @@ namespace bustub {
 LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_frames), k_(k) {}
 
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
-  std::unique_lock<std::mutex> lock(latch_);
+  std::scoped_lock<std::mutex> lock(latch_);
+  std::cout<<frame_id<<"\n";
   *frame_id = -1;
   // If there are no evictable frames, return false
   if (curr_size_ == 0) {
@@ -130,7 +131,7 @@ auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
 //     }
 
 void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
-  std::unique_lock<std::mutex> lock(latch_);
+  std::scoped_lock<std::mutex> lock(latch_);
   if (static_cast<size_t>(frame_id) >= replacer_size_)  // valid?
   {
     throw std::invalid_argument("Invalid frame_id");
@@ -161,7 +162,7 @@ void LRUKReplacer::RecordAccess(frame_id_t frame_id, AccessType access_type) {
 }
 
 void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
-  std::unique_lock<std::mutex> lock(latch_);
+  std::scoped_lock<std::mutex> lock(latch_);
   auto it = node_store_.find(frame_id);
   if (it != node_store_.end()) {
     it->second.is_evictable_ = set_evictable;
@@ -176,7 +177,7 @@ void LRUKReplacer::SetEvictable(frame_id_t frame_id, bool set_evictable) {
 }
 
 void LRUKReplacer::Remove(frame_id_t frame_id) {
-  std::unique_lock<std::mutex> lock(latch_);
+  std::scoped_lock<std::mutex> lock(latch_);
   auto it = node_store_.find(frame_id);
   if (it != node_store_.end()) {
     // Clear all access history associated with a frame.
@@ -189,7 +190,7 @@ void LRUKReplacer::Remove(frame_id_t frame_id) {
   return;
 }
 auto LRUKReplacer::Size() -> size_t {
-  std::unique_lock<std::mutex> lock(latch_);
+  std::scoped_lock<std::mutex> lock(latch_);
   long long res = 0;
   for (const auto &node : node_store_) {
     if (!node.second.is_evictable_) {

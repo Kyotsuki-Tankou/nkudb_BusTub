@@ -251,36 +251,45 @@ uint32_t DiskExtendibleHashTable<K, V, KC>::UpdateDirectoryMapping(ExtendibleHTa
 template <typename K, typename V, typename KC>
 auto DiskExtendibleHashTable<K, V, KC>::Remove(const K &key, Transaction *transaction) -> bool {
   //level1->level2
-  auto header_guard=bpm_->FetchPage(header_page_id_);
+  auto header_guard=bpm_->FetchPageRead(header_page_id_);
   auto header_page=header_guard.As<ExtendibleHTableHeaderPage>();
   uint32_t val=Hash(key);
   auto dir_index=header_page->HashToDirectoryIndex(val);
-  auto dir_id=header_page->GetDirctoryPageId(dir_index);
-  if(dir_id==INVALID_PAGE_ID)  return false;
+  auto dir_id=header_page->GetDirectoryPageId(dir_index);
+  if(int(dir_id)==INVALID_PAGE_ID)  return false;
   //level2->level3
   WritePageGuard dir_guard=bpm_->FetchPageWrite(dir_id);
   auto dir_page=dir_guard.AsMut<ExtendibleHTableDirectoryPage>();
-  auto bucket_index=dir_page.HashToBucketIndex(val);
+  auto bucket_index=dir_page->HashToBucketIndex(val);
   auto bucket_id=dir_page->GetBucketPageId(bucket_index);
+  std::cout<<111<<std::endl;
   if(bucket_id==INVALID_PAGE_ID)  return false;
+
   //find key
   WritePageGuard bucket_guard=bpm_->FetchPageWrite(bucket_id);
   auto bucket_page=bucket_guard.AsMut<ExtendibleHTableBucketPage<K, V, KC> >();
   bool success=bucket_page->Remove(key,cmp_);
+  std::cout<<222<<std::endl;
   if(!success)  return false;
 
   while(bucket_page->IsEmpty())
   {
     bucket_guard.Drop();
     auto bucket_local_depth=dir_page->GetLocalDepth(bucket_index);
-    if(!bucket_local_depth)  return false;
+    // std::cout<<333<<std::endl;
+    // std::cout<<bucket_local_depth<<std::endl;
+    if(bucket_local_depth==0)  
+    {
+      while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+      break;
+      }
     auto merge_index=dir_page->GetSplitImageIndex(bucket_index);
     auto merge_id=dir_page->GetBucketPageId(merge_index);
     auto merge_local_depth=dir_page->GetLocalDepth(merge_index);
     
     if(bucket_local_depth==merge_local_depth)
     {
-      uint32_t new_index=std::min(bucket_index&dir_page->GetLocalDepthMask(bucket_index),merge_index);
+      uint32_t new_index=std::min(bucket_index & dir_page->GetLocalDepthMask(bucket_index), merge_index);
       uint32_t dist=(1<<(bucket_local_depth-1));
       uint32_t new_local_depth=bucket_local_depth-1;
       for(uint32_t i=new_index;i<dir_page->Size();i+=dist)
@@ -288,7 +297,9 @@ auto DiskExtendibleHashTable<K, V, KC>::Remove(const K &key, Transaction *transa
         dir_page->SetBucketPageId(i,merge_id);
         dir_page->SetLocalDepth(i,new_local_depth);
       }
-      if(!new_local_depth)  
+      // dir_page->SetBucketPageId(bucket_index, 0);
+      std::cout<<444<<std::endl;
+      if(new_local_depth==0)  
       {
         while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
         break;
@@ -303,8 +314,7 @@ auto DiskExtendibleHashTable<K, V, KC>::Remove(const K &key, Transaction *transa
       auto flag=bucket_id;
       bucket_index=split_index;
       bucket_id=split_id;
-      bucket_guard.Drop();
-      std::swap(bucket_guard,split_guard);
+      bucket_guard = std::move(split_guard);
       bucket_page=bucket_guard.AsMut<ExtendibleHTableBucketPage<K,V,KC> >();
       bpm_->DeletePage(flag);
     }

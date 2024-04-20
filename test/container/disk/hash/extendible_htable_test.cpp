@@ -133,6 +133,7 @@ TEST(ExtendibleHTableTest, RemoveTest1) {
   // remove the keys we inserted
   for (int i = 0; i < num_keys; i++) {
     bool removed = ht.Remove(i);
+    std::cout<<"remove1: "<<i<<std::endl;
     ASSERT_TRUE(removed);
     std::vector<int> res;
     ht.GetValue(i, &res);
@@ -144,6 +145,7 @@ TEST(ExtendibleHTableTest, RemoveTest1) {
   // try to remove some keys that don't exist/were not inserted
   for (int i = num_keys; i < 2 * num_keys; i++) {
     bool removed = ht.Remove(i);
+    std::cout<<"remove2: "<<i<<std::endl;
     ASSERT_FALSE(removed);
     std::vector<int> res;
     bool got_value = ht.GetValue(i, &res);
