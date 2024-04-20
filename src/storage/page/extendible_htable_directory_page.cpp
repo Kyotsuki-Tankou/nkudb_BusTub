@@ -23,9 +23,6 @@ namespace bustub {
 void ExtendibleHTableDirectoryPage::Init(uint32_t max_depth) {
   max_depth_ = max_depth;
   global_depth_ = 0;
-  for (uint32_t i = 0; i < HTABLE_DIRECTORY_ARRAY_SIZE; ++i) {
-    local_depths_[i] = 0;
-  }
 
   for (uint32_t i = 0; i < HTABLE_DIRECTORY_ARRAY_SIZE; ++i) {
     bucket_page_ids_[i] = INVALID_PAGE_ID;
