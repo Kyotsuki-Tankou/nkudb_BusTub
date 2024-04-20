@@ -20,6 +20,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <iostream>
 #include "common/config.h"
 #include "common/macros.h"
 

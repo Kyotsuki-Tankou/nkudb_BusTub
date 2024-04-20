@@ -119,7 +119,9 @@ class ExtendibleHTableDirectoryPage {
    */
   auto GetGlobalDepth() const -> uint32_t;
 
-  auto GetMaxDepth() const -> uint32_t;
+  auto GetMaxDepth() const -> uint32_t{
+    return max_depth_;
+  }
 
   /**
    * Increment the global depth of the directory
@@ -188,7 +190,7 @@ class ExtendibleHTableDirectoryPage {
    * Prints the current directory
    */
   void PrintDirectory() const;
-
+  
  private:
   uint32_t max_depth_;
   uint32_t global_depth_;

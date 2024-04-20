@@ -12,12 +12,12 @@
 
 #pragma once
 
+#include <iostream>
 #include <limits>
 #include <list>
 #include <mutex>  // NOLINT
 #include <unordered_map>
 #include <vector>
-#include <iostream>
 
 #include "common/config.h"
 #include "common/macros.h"
@@ -171,23 +171,22 @@ class LRUKReplacer {
     node_store_.clear();
   };
   void Dbg() {
-  std::cout<<"Dbg Begin:\n";
-  for (const auto& node : node_store_) {
-    std::cout << "Frame ID: " << node.first << ", History: [";
-    for (size_t i = 0; i < node.second.history_.size(); i++) {
-      if (i != 0) {
-        std::cout << ", ";
+    std::cout << "Dbg Begin:\n";
+    for (const auto &node : node_store_) {
+      std::cout << "Frame ID: " << node.first << ", History: [";
+      for (size_t i = 0; i < node.second.history_.size(); i++) {
+        if (i != 0) {
+          std::cout << ", ";
+        }
+        std::cout << node.second.history_[i];
       }
-      std::cout << node.second.history_[i];
-    }
-    std::cout << "]";
-    std::cout << "Is_Evitable" << node.second.is_evictable_ ;    
-    
-    std::cout<< std::endl;
-  }
-  std::cout<<"Dbg End:\n";
-}
+      std::cout << "]";
+      std::cout << "Is_Evitable" << node.second.is_evictable_;
 
+      std::cout << std::endl;
+    }
+    std::cout << "Dbg End:\n";
+  }
 };
 
 }  // namespace bustub
