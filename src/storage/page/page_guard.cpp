@@ -80,8 +80,11 @@ ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept { this->guard_ = std
 
 auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & {
   if (this != &that) {
+    if(guard_.page_!=nullptr)  guard_.page_->RUnlatch();
     // latch_->RUnlock();
     Drop();
+    if(guard_.page_!=nullptr)  guard_.page_->RLatch();
+    // latch_->RLock();
     guard_ = std::move(that.guard_);
     // latch_ = std::move(that.latch_);
   }
@@ -113,10 +116,13 @@ WritePageGuard::WritePageGuard(WritePageGuard &&that) noexcept{
 
 auto WritePageGuard::operator=(WritePageGuard &&that) noexcept -> WritePageGuard & {
   if (this != &that) {
+    if(guard_.page_!=nullptr)  guard_.page_->WUnlatch();
     this->Drop();
     // latch_->WUnlock();
     guard_ = std::move(that.guard_);
-    // latch_ = std::move(that.latch_);
+    // latch_->WLock();
+    if(guard_.page_!=nullptr)  guard_.page_->WLatch();
+    latch_ = std::move(that.latch_);
   }
   return *this;
 }

@@ -319,7 +319,7 @@ auto BufferPoolManager::AllocatePage() -> page_id_t { return next_page_id_++; }
 
 // auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard { return {this, nullptr}; }
 auto BufferPoolManager::FetchPageBasic(page_id_t page_id) -> BasicPageGuard {
-  // std::lock_guard<std::mutex> guard(latch_);
+  std::lock_guard<std::mutex> guard(latch_);
   auto page = FetchPage(page_id);
   if (page == nullptr) {
     return BasicPageGuard(this, nullptr);
@@ -331,19 +331,16 @@ auto BufferPoolManager::FetchPageBasic(page_id_t page_id) -> BasicPageGuard {
 auto BufferPoolManager::FetchPageRead(page_id_t page_id) -> ReadPageGuard {
   auto pg_ptr = FetchPage(page_id);
   pg_ptr->RLatch();
-  assert(pg_ptr != nullptr);
   return {this, pg_ptr};
 }
 
 auto BufferPoolManager::FetchPageWrite(page_id_t page_id) -> WritePageGuard {
   auto pg_ptr = FetchPage(page_id);
   pg_ptr->WLatch();
-  assert(pg_ptr != nullptr);
   return {this, pg_ptr};
 }
 auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard {
   auto pg_ptr = NewPage(page_id);
-  assert(pg_ptr != nullptr);
   return {this, pg_ptr};
 }
 }
