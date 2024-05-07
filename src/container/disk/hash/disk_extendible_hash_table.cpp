@@ -248,84 +248,253 @@ uint32_t DiskExtendibleHashTable<K, V, KC>::UpdateDirectoryMapping(ExtendibleHTa
 /*****************************************************************************
  * REMOVE
  *****************************************************************************/
+// template <typename K, typename V, typename KC>
+// auto DiskExtendibleHashTable<K, V, KC>::Remove(const K &key, Transaction *transaction) -> bool {
+//   //level1->level2
+//   auto header_guard=bpm_->FetchPageRead(header_page_id_);
+//   auto header_page=header_guard.As<ExtendibleHTableHeaderPage>();
+//   uint32_t val=Hash(key);
+//   auto dir_index=header_page->HashToDirectoryIndex(val);
+//   auto dir_id=header_page->GetDirectoryPageId(dir_index);
+//   if(int(dir_id)==INVALID_PAGE_ID)  return false;
+//   //level2->level3
+//   WritePageGuard dir_guard=bpm_->FetchPageWrite(dir_id);
+//   auto dir_page=dir_guard.AsMut<ExtendibleHTableDirectoryPage>();
+//   auto bucket_index=dir_page->HashToBucketIndex(val);
+//   auto bucket_id=dir_page->GetBucketPageId(bucket_index);
+//   std::cout<<111<<std::endl;
+//   if(bucket_id==INVALID_PAGE_ID)  return false;
+
+//   //find key
+//   WritePageGuard bucket_guard=bpm_->FetchPageWrite(bucket_id);
+//   auto bucket_page=bucket_guard.AsMut<ExtendibleHTableBucketPage<K, V, KC> >();
+//   bool success=bucket_page->Remove(key,cmp_);
+//   std::cout<<222<<std::endl;
+//   if(!success)  return false;
+
+//   while(bucket_page->IsEmpty())
+//   {
+//     bucket_guard.Drop();
+//     auto bucket_local_depth=dir_page->GetLocalDepth(bucket_index);
+//     // std::cout<<333<<std::endl;
+//     // std::cout<<bucket_local_depth<<std::endl;
+//     if(bucket_local_depth==0)  
+//     {
+//       while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+//       break;
+//       }
+//     auto merge_index=dir_page->GetSplitImageIndex(bucket_index);
+//     auto merge_id=dir_page->GetBucketPageId(merge_index);
+//     auto merge_local_depth=dir_page->GetLocalDepth(merge_index);
+    
+//     if(bucket_local_depth==merge_local_depth)
+//     {
+//       uint32_t new_index=std::min(bucket_index & dir_page->GetLocalDepthMask(bucket_index), merge_index);
+//       uint32_t dist=(1<<(bucket_local_depth-1));
+//       uint32_t new_local_depth=bucket_local_depth-1;
+//       for(uint32_t i=new_index;i<dir_page->Size();i+=dist)
+//       {
+//         dir_page->SetBucketPageId(i,merge_id);
+//         dir_page->SetLocalDepth(i,new_local_depth);
+//       }
+//       // dir_page->SetBucketPageId(bucket_index, 0);
+//       std::cout<<444<<std::endl;
+//       if(new_local_depth==0)  
+//       {
+//         while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+//         break;
+//       }
+//       auto split_index=dir_page->GetSplitImageIndex(merge_index);
+//       auto split_id=dir_page->GetBucketPageId(split_index);
+//       WritePageGuard split_guard=bpm_->FetchPageWrite(split_id);
+//       if(split_id==INVALID_PAGE_ID)  {
+//         while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+//         break;
+//         }
+//       auto flag=bucket_id;
+//       bucket_index=split_index;
+//       bucket_id=split_id;
+//       bucket_guard = std::move(split_guard);
+//       bucket_page=bucket_guard.AsMut<ExtendibleHTableBucketPage<K,V,KC> >();
+//       bpm_->DeletePage(flag);
+//     }
+//     else  
+//     {
+//       while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+//       break;
+//     }
+//     while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+//   }
+//   return success;
+// }
+// template <typename K, typename V, typename KC>
+// auto DiskExtendibleHashTable<K, V, KC>::Remove(const K &key, Transaction *transaction) -> bool {
+//   //level1->level2
+//   auto header_guard=bpm_->FetchPageRead(header_page_id_);
+//   auto header_page=header_guard.As<ExtendibleHTableHeaderPage>();
+//   uint32_t val=Hash(key);
+//   auto dir_index=header_page->HashToDirectoryIndex(val);
+//   auto dir_id=header_page->GetDirectoryPageId(dir_index);
+//   if(int(dir_id)==INVALID_PAGE_ID)  return false;
+//   //level2->level3
+//   WritePageGuard dir_guard=bpm_->FetchPageWrite(dir_id);
+//   auto dir_page=dir_guard.AsMut<ExtendibleHTableDirectoryPage>();
+//   auto bucket_index=dir_page->HashToBucketIndex(val);
+//   auto bucket_id=dir_page->GetBucketPageId(bucket_index);
+//   std::cout<<111<<std::endl;
+//   if(bucket_id==INVALID_PAGE_ID)  return false;
+
+//   //find key
+//   WritePageGuard bucket_guard=bpm_->FetchPageWrite(bucket_id);
+//   auto bucket_page=bucket_guard.AsMut<ExtendibleHTableBucketPage<K, V, KC> >();
+//   bool success=bucket_page->Remove(key,cmp_);
+//   std::cout<<222<<std::endl;
+//   if(!success)  return false;
+
+//   while(bucket_page->IsEmpty())
+//   {
+//     bucket_guard.Drop();
+//     auto bucket_local_depth=dir_page->GetLocalDepth(bucket_index);
+//     // std::cout<<333<<std::endl;
+//     // std::cout<<bucket_local_depth<<std::endl;
+//     if(bucket_local_depth==0)
+//     {
+//       while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+//       break;
+//     }
+//     auto merge_index=dir_page->GetSplitImageIndex(bucket_index);
+//     auto merge_id=dir_page->GetBucketPageId(merge_index);
+//     auto merge_local_depth=dir_page->GetLocalDepth(merge_index);
+
+//     if(bucket_local_depth==merge_local_depth)
+//     {
+//       uint32_t new_index=std::min(bucket_index & dir_page->GetLocalDepthMask(bucket_index), merge_index);
+//       uint32_t dist=(1<<(bucket_local_depth-1));
+//       uint32_t new_local_depth=bucket_local_depth-1;
+//       for(uint32_t i=new_index;i<dir_page->Size();i+=dist)
+//       {
+//         dir_page->SetBucketPageId(i,merge_id);
+//         dir_page->SetLocalDepth(i,new_local_depth);
+//       }
+//       // dir_page->SetBucketPageId(bucket_index, 0);
+//       std::cout<<444<<std::endl;
+//       if(new_local_depth==0)
+//       {
+//         while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+//         break;
+//       }
+//       auto split_index=dir_page->GetSplitImageIndex(merge_index);
+//       auto split_id=dir_page->GetBucketPageId(split_index);
+//       WritePageGuard split_guard=bpm_->FetchPageWrite(split_id);
+//       if(split_id==INVALID_PAGE_ID)
+//       {
+//         while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+//         break;
+//       }
+//       auto flag=bucket_id;
+//       bucket_index=split_index;
+//       bucket_id=split_id;
+//       if (bucket_guard.PageId() != INVALID_PAGE_ID) {
+//         bpm_->DeletePage(flag);
+//       }
+//       bucket_guard = std::move(split_guard);
+//       bucket_page=bucket_guard.AsMut<ExtendibleHTableBucketPage<K,V,KC> >();
+//     }
+//     else
+//     {
+//       while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+//       break;
+//     }
+//     while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+//   }
+//   return success;
+// }
 template <typename K, typename V, typename KC>
 auto DiskExtendibleHashTable<K, V, KC>::Remove(const K &key, Transaction *transaction) -> bool {
-  //level1->level2
-  auto header_guard=bpm_->FetchPageRead(header_page_id_);
-  auto header_page=header_guard.As<ExtendibleHTableHeaderPage>();
-  uint32_t val=Hash(key);
-  auto dir_index=header_page->HashToDirectoryIndex(val);
-  auto dir_id=header_page->GetDirectoryPageId(dir_index);
-  if(int(dir_id)==INVALID_PAGE_ID)  return false;
-  //level2->level3
-  WritePageGuard dir_guard=bpm_->FetchPageWrite(dir_id);
-  auto dir_page=dir_guard.AsMut<ExtendibleHTableDirectoryPage>();
-  auto bucket_index=dir_page->HashToBucketIndex(val);
-  auto bucket_id=dir_page->GetBucketPageId(bucket_index);
-  std::cout<<111<<std::endl;
-  if(bucket_id==INVALID_PAGE_ID)  return false;
-
-  //find key
-  WritePageGuard bucket_guard=bpm_->FetchPageWrite(bucket_id);
-  auto bucket_page=bucket_guard.AsMut<ExtendibleHTableBucketPage<K, V, KC> >();
-  bool success=bucket_page->Remove(key,cmp_);
-  std::cout<<222<<std::endl;
-  if(!success)  return false;
-
-  while(bucket_page->IsEmpty())
-  {
-    bucket_guard.Drop();
-    auto bucket_local_depth=dir_page->GetLocalDepth(bucket_index);
-    // std::cout<<333<<std::endl;
-    // std::cout<<bucket_local_depth<<std::endl;
-    if(bucket_local_depth==0)  
-    {
-      while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
-      break;
-      }
-    auto merge_index=dir_page->GetSplitImageIndex(bucket_index);
-    auto merge_id=dir_page->GetBucketPageId(merge_index);
-    auto merge_local_depth=dir_page->GetLocalDepth(merge_index);
-    
-    if(bucket_local_depth==merge_local_depth)
-    {
-      uint32_t new_index=std::min(bucket_index & dir_page->GetLocalDepthMask(bucket_index), merge_index);
-      uint32_t dist=(1<<(bucket_local_depth-1));
-      uint32_t new_local_depth=bucket_local_depth-1;
-      for(uint32_t i=new_index;i<dir_page->Size();i+=dist)
-      {
-        dir_page->SetBucketPageId(i,merge_id);
-        dir_page->SetLocalDepth(i,new_local_depth);
-      }
-      // dir_page->SetBucketPageId(bucket_index, 0);
-      std::cout<<444<<std::endl;
-      if(new_local_depth==0)  
-      {
-        while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
-        break;
-      }
-      auto split_index=dir_page->GetSplitImageIndex(merge_index);
-      auto split_id=dir_page->GetBucketPageId(split_index);
-      WritePageGuard split_guard=bpm_->FetchPageWrite(split_id);
-      if(split_id==INVALID_PAGE_ID)  {
-        while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
-        break;
-        }
-      auto flag=bucket_id;
-      bucket_index=split_index;
-      bucket_id=split_id;
-      bucket_guard = std::move(split_guard);
-      bucket_page=bucket_guard.AsMut<ExtendibleHTableBucketPage<K,V,KC> >();
-      bpm_->DeletePage(flag);
-    }
-    else  
-    {
-      while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
-      break;
-    }
-    while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
+  // std::cout << "Remove " << key << "\n";
+  // first-level to second-level
+  auto header_guard = bpm_->FetchPageRead(header_page_id_);
+  auto header_page = header_guard.As<ExtendibleHTableHeaderPage>();
+  // uint32_t hash = hash_fn_.GetHash(key);
+  uint32_t hash = Hash(key);  // for test
+  auto directory_index = header_page->HashToDirectoryIndex(hash);
+  auto directory_page_id = header_page->GetDirectoryPageId(directory_index);
+  if (int(directory_page_id) == INVALID_PAGE_ID) {
+    return false;
   }
-  return success;
+
+  // second-level to third-level
+  WritePageGuard directory_guard = bpm_->FetchPageWrite(directory_page_id);
+  auto directory_page = directory_guard.AsMut<ExtendibleHTableDirectoryPage>();
+  auto bucket_index = directory_page->HashToBucketIndex(hash);
+  auto bucket_page_id = directory_page->GetBucketPageId(bucket_index);
+  if (int(bucket_page_id) == INVALID_PAGE_ID) {
+    return false;
+  }
+
+  // find the target key in the third level
+  WritePageGuard bucket_guard = bpm_->FetchPageWrite(bucket_page_id);
+  auto bucket_page = bucket_guard.AsMut<ExtendibleHTableBucketPage<K, V, KC>>();
+  bool remove_success = bucket_page->Remove(key, cmp_);
+  if (!remove_success) {
+    return false;
+  }
+
+  while (bucket_page->IsEmpty()) {
+    bucket_guard.Drop();
+    auto bucket_local_depth = directory_page->GetLocalDepth(bucket_index);
+    if (bucket_local_depth == 0) {
+      break;
+    }
+
+    auto merge_bucket_index = directory_page->GetSplitImageIndex(bucket_index);
+    auto merge_bucket_local_depth = directory_page->GetLocalDepth(merge_bucket_index);
+    auto merge_bucket_page_id = directory_page->GetBucketPageId(merge_bucket_index);
+
+    if (bucket_local_depth == merge_bucket_local_depth) {
+      uint32_t traverse_bucket_idx =
+          std::min(bucket_index & directory_page->GetLocalDepthMask(bucket_index), merge_bucket_index);
+      uint32_t distance = 1 << (bucket_local_depth - 1);
+      uint32_t new_local_depth = bucket_local_depth - 1;
+      for (uint32_t i = traverse_bucket_idx; i < directory_page->Size(); i += distance) {
+        directory_page->SetBucketPageId(i, merge_bucket_page_id);
+        directory_page->SetLocalDepth(i, new_local_depth);
+      }
+
+      if (new_local_depth == 0) {
+        break;
+      }
+      auto split_image_bucket_index = directory_page->GetSplitImageIndex(merge_bucket_index);
+      auto split_image_bucket_page_id = directory_page->GetBucketPageId(split_image_bucket_index);
+      WritePageGuard split_image_bucket_guard = bpm_->FetchPageWrite(split_image_bucket_page_id);
+      if (split_image_bucket_page_id == INVALID_PAGE_ID) {
+        break;
+      }
+      auto helper = bucket_page_id;
+      // 我当时是咋想的？写出下面这一行抽象代码……
+      // gradescope不提供测试源码，我这种复现不了测试的菜鸡重新review了一遍代码才找出这个bug。
+      // directory_page->SetBucketPageId(bucket_index, 0);
+      bucket_index = split_image_bucket_index;
+      bucket_page_id = split_image_bucket_page_id;
+      bucket_guard = std::move(split_image_bucket_guard);
+      bucket_page = bucket_guard.AsMut<ExtendibleHTableBucketPage<K, V, KC>>();
+      bpm_->DeletePage(helper);
+    } else {
+      // Can not merge because of (LD != LD(split_image))
+      break;
+    }
+
+    while (directory_page->CanShrink()) {
+      directory_page->DecrGlobalDepth();
+    }
+  }
+
+  // 感觉多少有点愚蠢……
+  while (directory_page->CanShrink()) {
+    directory_page->DecrGlobalDepth();
+  }
+
+  return remove_success;
 }
 
 template class DiskExtendibleHashTable<int, int, IntComparator>;

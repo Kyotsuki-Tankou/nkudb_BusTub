@@ -103,9 +103,9 @@ class ExecutionEngine {
     }
   }
 
-  [[maybe_unused]] BufferPoolManager *bpm_;
-  [[maybe_unused]] TransactionManager *txn_mgr_;
-  [[maybe_unused]] Catalog *catalog_;
+  BufferPoolManager *bpm_;
+  TransactionManager *txn_mgr_;
+  Catalog *catalog_;
 };
 
 }  // namespace bustub

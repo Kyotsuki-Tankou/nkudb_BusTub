@@ -101,7 +101,7 @@ auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
 
 auto BufferPoolManager::FetchPage(page_id_t page_id, AccessType access_type) -> Page * {
   std::scoped_lock<std::mutex> lock(latch_);
-
+  // std::cout << "Fetch" << std::endl;
   // First search for page_id in the buffer pool
   if (page_table_.find(page_id) != page_table_.end()) {
     // If found, return the page and update its access history
@@ -319,7 +319,7 @@ auto BufferPoolManager::AllocatePage() -> page_id_t { return next_page_id_++; }
 
 // auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard { return {this, nullptr}; }
 auto BufferPoolManager::FetchPageBasic(page_id_t page_id) -> BasicPageGuard {
-  std::lock_guard<std::mutex> guard(latch_);
+  // std::lock_guard<std::mutex> guard(latch_);
   auto page = FetchPage(page_id);
   if (page == nullptr) {
     return BasicPageGuard(this, nullptr);
@@ -344,4 +344,4 @@ auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard {
   return {this, pg_ptr};
 }
 }
-  // namespace bustub
+// namespace bustub
