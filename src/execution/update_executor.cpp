@@ -18,17 +18,17 @@ namespace bustub {
 UpdateExecutor::UpdateExecutor(ExecutorContext *exec_ctx, const UpdatePlanNode *plan,
                                std::unique_ptr<AbstractExecutor> &&child_executor)
     : AbstractExecutor(exec_ctx) {
-      plan_=plan;
-      child_executor_=std::move(child_executor);
+  plan_ = plan;
+  child_executor_ = std::move(child_executor);
   // As of Fall 2022, you DON'T need to implement update executor to have perfect score in project 3 / project 4.
 }
 
-void UpdateExecutor::Init() { 
+void UpdateExecutor::Init() {
   child_executor_->Init();
   is_end_ = false;
- }
+}
 
-auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool { 
+auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   if (is_end_) {
     return false;
   }
@@ -39,7 +39,6 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   int32_t row_amount = 0;
   Tuple child_tuple{};
   while (child_executor_->Next(&child_tuple, rid)) {
-
     auto &table_heap = table_info_->table_;
     TupleMeta tuple_meta{};
     tuple_meta.is_deleted_ = true;
@@ -85,6 +84,6 @@ auto UpdateExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   is_end_ = true;
 
   return true;
- }
+}
 
 }  // namespace bustub

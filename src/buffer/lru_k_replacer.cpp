@@ -20,7 +20,7 @@ LRUKReplacer::LRUKReplacer(size_t num_frames, size_t k) : replacer_size_(num_fra
 
 auto LRUKReplacer::Evict(frame_id_t *frame_id) -> bool {
   std::scoped_lock<std::mutex> lock(latch_);
-  std::cout<<frame_id<<"\n";
+  std::cout << frame_id << "\n";
   *frame_id = -1;
   // If there are no evictable frames, return false
   if (curr_size_ == 0) {

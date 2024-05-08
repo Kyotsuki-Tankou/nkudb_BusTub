@@ -1,4 +1,3 @@
-#include "optimizer/optimizer.h"
 #include <memory>
 #include "catalog/catalog.h"
 #include "catalog/column.h"
@@ -9,6 +8,7 @@
 #include "execution/plans/abstract_plan.h"
 #include "execution/plans/index_scan_plan.h"
 #include "execution/plans/seq_scan_plan.h"
+#include "optimizer/optimizer.h"
 
 namespace bustub {
 

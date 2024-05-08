@@ -132,7 +132,7 @@ auto DiskExtendibleHashTable<K, V, KC>::Insert(const K &key, const V &value, Tra
     auto new_localDepth = dir_page->GetLocalDepth(bucket_index);
     auto localDepthMask = dir_page->GetLocalDepthMask(bucket_index);
     auto new_bucket_idx = UpdateDirectoryMapping(dir_page, bucket_index, new_id, new_localDepth, localDepthMask);
-    bucket_index = new_bucket_idx; // update bucket_index
+    bucket_index = new_bucket_idx;  // update bucket_index
 
     // rehash
     page_id_t rehash_id;
@@ -182,8 +182,8 @@ auto DiskExtendibleHashTable<K, V, KC>::InsertToNewDirectory(ExtendibleHTableHea
   auto dir_page = dir_guard.AsMut<ExtendibleHTableDirectoryPage>();
   dir_page->Init(directory_max_depth_);
   header->SetDirectoryPageId(directory_idx, dir_page_id);
-  auto bucket_idx = dir_page->HashToBucketIndex(hash); 
-  int success=InsertToNewBucket(dir_page, bucket_idx, key, value);
+  auto bucket_idx = dir_page->HashToBucketIndex(hash);
+  int success = InsertToNewBucket(dir_page, bucket_idx, key, value);
   return success;
 }
 
@@ -209,41 +209,42 @@ auto DiskExtendibleHashTable<K, V, KC>::InsertToNewBucket(ExtendibleHTableDirect
 
 template <typename K, typename V, typename KC>
 uint32_t DiskExtendibleHashTable<K, V, KC>::UpdateDirectoryMapping(ExtendibleHTableDirectoryPage *directory,
-                                                                   uint32_t new_bucket_idx, page_id_t new_bucket_page_id,
-                                                                   uint32_t new_local_depth, uint32_t local_depth_mask) {
-    // uint32_t old_bucket_count = 1 << (new_local_depth - 1);
-    // uint32_t old_bucket_idx = local_depth_mask & new_bucket_idx;
-    // uint32_t distance = 1u << new_local_depth;
+                                                                   uint32_t new_bucket_idx,
+                                                                   page_id_t new_bucket_page_id,
+                                                                   uint32_t new_local_depth,
+                                                                   uint32_t local_depth_mask) {
+  // uint32_t old_bucket_count = 1 << (new_local_depth - 1);
+  // uint32_t old_bucket_idx = local_depth_mask & new_bucket_idx;
+  // uint32_t distance = 1u << new_local_depth;
 
-    // uint32_t new_first_bucket_idx = old_bucket_idx + (new_bucket_idx >= old_bucket_count ? old_bucket_count : 0);
+  // uint32_t new_first_bucket_idx = old_bucket_idx + (new_bucket_idx >= old_bucket_count ? old_bucket_count : 0);
 
-    // uint32_t prime_idx = new_first_bucket_idx;
+  // uint32_t prime_idx = new_first_bucket_idx;
 
-    // for (uint32_t i = new_first_bucket_idx; i < directory->Size(); i += distance) {
-    //     directory->SetBucketPageId(i, new_bucket_page_id);
-    //     directory->SetLocalDepth(i, new_local_depth);
-    //     directory->SetLocalDepth(prime_idx, new_local_depth);
-    //     assert(directory->GetLocalDepth(i) <= directory->GetGlobalDepth());
-    //     assert(directory->GetLocalDepth(prime_idx) <= directory->GetGlobalDepth());
-    //     prime_idx += distance;
-    // }
-    // return new_first_bucket_idx;
-    auto new_first_bucket_idx = local_depth_mask & new_bucket_idx;
-    auto prime_idx = new_first_bucket_idx;
-    uint32_t distance = pow(2, new_local_depth);
-    new_first_bucket_idx = (new_first_bucket_idx >> (new_local_depth - 1)) == 0 ? (new_first_bucket_idx + (distance / 2))
-                                                                                : (new_first_bucket_idx - (distance / 2));
-    for (uint32_t i = new_first_bucket_idx; i < directory->Size(); i += distance) {
-      directory->SetBucketPageId(i, new_bucket_page_id);
-      directory->SetLocalDepth(i, new_local_depth);
-      directory->SetLocalDepth(prime_idx, new_local_depth);
-      assert(directory->GetLocalDepth(i) <= directory->GetGlobalDepth());
-      assert(directory->GetLocalDepth(prime_idx) <= directory->GetGlobalDepth());
-      prime_idx += distance;
-    }
-    return new_first_bucket_idx;
+  // for (uint32_t i = new_first_bucket_idx; i < directory->Size(); i += distance) {
+  //     directory->SetBucketPageId(i, new_bucket_page_id);
+  //     directory->SetLocalDepth(i, new_local_depth);
+  //     directory->SetLocalDepth(prime_idx, new_local_depth);
+  //     assert(directory->GetLocalDepth(i) <= directory->GetGlobalDepth());
+  //     assert(directory->GetLocalDepth(prime_idx) <= directory->GetGlobalDepth());
+  //     prime_idx += distance;
+  // }
+  // return new_first_bucket_idx;
+  auto new_first_bucket_idx = local_depth_mask & new_bucket_idx;
+  auto prime_idx = new_first_bucket_idx;
+  uint32_t distance = pow(2, new_local_depth);
+  new_first_bucket_idx = (new_first_bucket_idx >> (new_local_depth - 1)) == 0 ? (new_first_bucket_idx + (distance / 2))
+                                                                              : (new_first_bucket_idx - (distance / 2));
+  for (uint32_t i = new_first_bucket_idx; i < directory->Size(); i += distance) {
+    directory->SetBucketPageId(i, new_bucket_page_id);
+    directory->SetLocalDepth(i, new_local_depth);
+    directory->SetLocalDepth(prime_idx, new_local_depth);
+    assert(directory->GetLocalDepth(i) <= directory->GetGlobalDepth());
+    assert(directory->GetLocalDepth(prime_idx) <= directory->GetGlobalDepth());
+    prime_idx += distance;
+  }
+  return new_first_bucket_idx;
 }
-
 
 /*****************************************************************************
  * REMOVE
@@ -278,7 +279,7 @@ uint32_t DiskExtendibleHashTable<K, V, KC>::UpdateDirectoryMapping(ExtendibleHTa
 //     auto bucket_local_depth=dir_page->GetLocalDepth(bucket_index);
 //     // std::cout<<333<<std::endl;
 //     // std::cout<<bucket_local_depth<<std::endl;
-//     if(bucket_local_depth==0)  
+//     if(bucket_local_depth==0)
 //     {
 //       while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
 //       break;
@@ -286,7 +287,7 @@ uint32_t DiskExtendibleHashTable<K, V, KC>::UpdateDirectoryMapping(ExtendibleHTa
 //     auto merge_index=dir_page->GetSplitImageIndex(bucket_index);
 //     auto merge_id=dir_page->GetBucketPageId(merge_index);
 //     auto merge_local_depth=dir_page->GetLocalDepth(merge_index);
-    
+
 //     if(bucket_local_depth==merge_local_depth)
 //     {
 //       uint32_t new_index=std::min(bucket_index & dir_page->GetLocalDepthMask(bucket_index), merge_index);
@@ -299,7 +300,7 @@ uint32_t DiskExtendibleHashTable<K, V, KC>::UpdateDirectoryMapping(ExtendibleHTa
 //       }
 //       // dir_page->SetBucketPageId(bucket_index, 0);
 //       std::cout<<444<<std::endl;
-//       if(new_local_depth==0)  
+//       if(new_local_depth==0)
 //       {
 //         while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
 //         break;
@@ -318,7 +319,7 @@ uint32_t DiskExtendibleHashTable<K, V, KC>::UpdateDirectoryMapping(ExtendibleHTa
 //       bucket_page=bucket_guard.AsMut<ExtendibleHTableBucketPage<K,V,KC> >();
 //       bpm_->DeletePage(flag);
 //     }
-//     else  
+//     else
 //     {
 //       while(dir_page->CanShrink())  dir_page->DecrGlobalDepth();
 //       break;

@@ -84,7 +84,8 @@ auto BufferPoolManager::NewPage(page_id_t *page_id) -> Page * {
     // FlushPage(pages_[victim_frame_id].GetPageId());
     auto promise = disk_scheduler_->CreatePromise();
     auto future = promise.get_future();
-    disk_scheduler_->Schedule({true, pages_[victim_frame_id].GetData(), pages_[victim_frame_id].page_id_, std::move(promise)});
+    disk_scheduler_->Schedule(
+        {true, pages_[victim_frame_id].GetData(), pages_[victim_frame_id].page_id_, std::move(promise)});
     future.get();
   }
 
@@ -135,7 +136,7 @@ auto BufferPoolManager::FetchPage(page_id_t page_id, AccessType access_type) -> 
   }
   // std::cout << 44444 << std::endl;
   // Read the page from disk by scheduling a read request with disk_manager_->ReadPage()
-  std::cout<<page_id<<" "<<frame_id<<" "<<pages_[frame_id].GetData()<<std::endl;
+  std::cout << page_id << " " << frame_id << " " << pages_[frame_id].GetData() << std::endl;
   disk_scheduler_->disk_manager_->ReadPage(page_id, pages_[frame_id].GetData());
   // std::cout << 55555 << std::endl;
   // Replace the old page in the frame and update the metadata of the new page
@@ -343,5 +344,5 @@ auto BufferPoolManager::NewPageGuarded(page_id_t *page_id) -> BasicPageGuard {
   auto pg_ptr = NewPage(page_id);
   return {this, pg_ptr};
 }
-}
+}  // namespace bustub
 // namespace bustub

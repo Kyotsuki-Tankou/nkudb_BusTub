@@ -80,10 +80,10 @@ ReadPageGuard::ReadPageGuard(ReadPageGuard &&that) noexcept { this->guard_ = std
 
 auto ReadPageGuard::operator=(ReadPageGuard &&that) noexcept -> ReadPageGuard & {
   if (this != &that) {
-    if(guard_.page_!=nullptr)  guard_.page_->RUnlatch();
+    if (guard_.page_ != nullptr) guard_.page_->RUnlatch();
     // latch_->RUnlock();
     Drop();
-    if(guard_.page_!=nullptr)  guard_.page_->RLatch();
+    if (guard_.page_ != nullptr) guard_.page_->RLatch();
     // latch_->RLock();
     guard_ = std::move(that.guard_);
     // latch_ = std::move(that.latch_);
@@ -102,26 +102,26 @@ void ReadPageGuard::Drop() {
   guard.is_dirty_ = false;
 }
 
-ReadPageGuard::~ReadPageGuard() {Drop();}  // NOLINT
+ReadPageGuard::~ReadPageGuard() { Drop(); }  // NOLINT
 
 WritePageGuard::WritePageGuard(BufferPoolManager *bpm, Page *page) {
   if (page == nullptr) return;
   guard_.bpm_ = bpm;
   guard_.page_ = page;
 }
-WritePageGuard::WritePageGuard(WritePageGuard &&that) noexcept{
+WritePageGuard::WritePageGuard(WritePageGuard &&that) noexcept {
   this->guard_ = std::move(that.guard_);
   // latch_->WLock();
 }
 
 auto WritePageGuard::operator=(WritePageGuard &&that) noexcept -> WritePageGuard & {
   if (this != &that) {
-    if(guard_.page_!=nullptr)  guard_.page_->WUnlatch();
+    if (guard_.page_ != nullptr) guard_.page_->WUnlatch();
     this->Drop();
     // latch_->WUnlock();
     guard_ = std::move(that.guard_);
     // latch_->WLock();
-    if(guard_.page_!=nullptr)  guard_.page_->WLatch();
+    if (guard_.page_ != nullptr) guard_.page_->WLatch();
     latch_ = std::move(that.latch_);
   }
   return *this;

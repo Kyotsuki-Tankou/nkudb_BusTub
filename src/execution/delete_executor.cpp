@@ -19,16 +19,16 @@ namespace bustub {
 DeleteExecutor::DeleteExecutor(ExecutorContext *exec_ctx, const DeletePlanNode *plan,
                                std::unique_ptr<AbstractExecutor> &&child_executor)
     : AbstractExecutor(exec_ctx) {
-        plan_=plan;
-        child_executor_=std::move(child_executor);
-    }
+  plan_ = plan;
+  child_executor_ = std::move(child_executor);
+}
 
-void DeleteExecutor::Init() { 
-    child_executor_->Init();
-    is_end_ = false;
- }
+void DeleteExecutor::Init() {
+  child_executor_->Init();
+  is_end_ = false;
+}
 
-auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool { 
+auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   if (is_end_) {
     return false;
   }
@@ -64,6 +64,6 @@ auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
   is_end_ = true;
 
   return true;
-   }
+}
 
 }  // namespace bustub

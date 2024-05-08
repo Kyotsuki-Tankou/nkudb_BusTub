@@ -10,8 +10,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include <iostream>
 #include <optional>
-#include<iostream>
 #include <utility>
 
 #include "common/exception.h"
@@ -40,12 +40,12 @@ auto ExtendibleHTableBucketPage<K, V, KC>::Lookup(const K &key, V &value, const 
 template <typename K, typename V, typename KC>
 auto ExtendibleHTableBucketPage<K, V, KC>::Insert(const K &key, const V &value, const KC &cmp) -> bool {
   if (size_ == max_size_) {
-    std::cout<<size_<<" "<<max_size_<<std::endl;
+    std::cout << size_ << " " << max_size_ << std::endl;
     return false;
   }
   for (uint32_t i = 0; i < size_; i++) {
     if (cmp(array_[i].first, key) == 0) {
-      std::cout<<222222<<std::endl;
+      std::cout << 222222 << std::endl;
       return false;
     }
   }
