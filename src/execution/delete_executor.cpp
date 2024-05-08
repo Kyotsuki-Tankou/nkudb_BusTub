@@ -25,28 +25,26 @@ DeleteExecutor::DeleteExecutor(ExecutorContext *exec_ctx, const DeletePlanNode *
 
 void DeleteExecutor::Init() { 
     child_executor_->Init();
-    table_oid_t table_id = plan_->GetTableOid();
-    Catalog *catalog = exec_ctx_->GetCatalog();
-    table_info_ = catalog->GetTable(table_id);
-    index_array_ = catalog->GetTableIndexes(table_info_->name_);
     is_end_ = false;
  }
 
 auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool { 
-    if (is_end_) {
+  if (is_end_) {
     return false;
   }
+  table_oid_t table_id = plan_->GetTableOid();
+  Catalog *catalog = exec_ctx_->GetCatalog();
+  table_info_ = catalog->GetTable(table_id);
+  index_array_ = catalog->GetTableIndexes(table_info_->name_);
   int32_t row_amount = 0;
   Tuple child_tuple{};
   while (child_executor_->Next(&child_tuple, rid)) {
-    /** Delete the tuple in the table */
     auto &table_heap = table_info_->table_;
     TupleMeta tuple_meta{};
     tuple_meta.is_deleted_ = true;
     tuple_meta.ts_ = 0;
     table_heap->UpdateTupleMeta(tuple_meta, *rid);
 
-    /** Update the affected index */
     for (auto &index_info : index_array_) {
       auto &index = index_info->index_;
       printf("delete index %s\n", index_info->name_.c_str());

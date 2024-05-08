@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include<iostream>
 #include "execution/executors/seq_scan_executor.h"
 
 namespace bustub {
@@ -32,17 +33,17 @@ auto SeqScanExecutor::Next(Tuple *tuple, RID *rid) -> bool {
         auto next_tuple=table_iter_->GetTuple();
         auto tuple_data=next_tuple.first;
         *tuple=Tuple(next_tuple.second);
+        ++*table_iter_;
         if(!tuple_data.is_deleted_)
         {
-            auto filter=plan_->filter_predicate_;
-            if(filter)
+            if(plan_->filter_predicate_)
             {
+                auto &filter=plan_->filter_predicate_;
                 Value val=filter->Evaluate(tuple,GetOutputSchema());
                 if(!val.IsNull()&&val.GetAs<bool>())  return true;
             }
             else  return true;
         }
-        ++(*table_iter_);
-    };
+    }
 }
 }  // namespace bustub
