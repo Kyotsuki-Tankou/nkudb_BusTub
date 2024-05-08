@@ -79,41 +79,79 @@ auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
     
     // ending_ = true;
     // return true;
-    if (is_end_) {
-    return false;
-  }
-  Tuple child_tuple{};
-  auto &table_heap = table_info_->table_;
-  TupleMeta inserted_tuple_meta;
-  while (child_executor_->Next(&child_tuple, rid)) {
-    /** Insert tuple into the table. */
-    inserted_tuple_meta.ts_ = 0;
-    inserted_tuple_meta.is_deleted_ = false;
 
-    auto new_rid = table_heap->InsertTuple(inserted_tuple_meta, child_tuple, exec_ctx_->GetLockManager(),
-                                           exec_ctx_->GetTransaction(), table_info_->oid_);
-    if (new_rid == std::nullopt) {
-      return false;
+
+//     if (is_end_) {
+//     return false;
+//   }
+//   Tuple child_tuple{};
+//   auto &table_heap = table_info_->table_;
+//   TupleMeta inserted_tuple_meta;
+//   while (child_executor_->Next(&child_tuple, rid)) {
+//     /** Insert tuple into the table. */
+//     inserted_tuple_meta.ts_ = 0;
+//     inserted_tuple_meta.is_deleted_ = false;
+
+//     auto new_rid = table_heap->InsertTuple(inserted_tuple_meta, child_tuple, exec_ctx_->GetLockManager(),
+//                                            exec_ctx_->GetTransaction(), table_info_->oid_);
+//     if (new_rid == std::nullopt) {
+//       return false;
+//     }
+
+//     /** Update the affected indexes. */
+//     for (auto &affected_index : index_array_) {
+//       affected_index->index_->InsertEntry(child_tuple.KeyFromTuple(table_info_->schema_, affected_index->key_schema_,
+//                                                                    affected_index->index_->GetKeyAttrs()),
+//                                           new_rid.value(), exec_ctx_->GetTransaction());
+//     }
+
+//     row_amount_++;
+//   }
+//   row_value_ = Value(INTEGER, row_amount_);
+//   std::vector<Value> output{};
+//   output.reserve(GetOutputSchema().GetColumnCount());
+//   output.push_back(row_value_);
+
+//   *tuple = Tuple{output, &GetOutputSchema()};
+//   is_end_ = true;
+
+//   return true;
+
+if (is_end_) {
+        return false;
     }
+    Tuple child_tuple{};
+    auto &table_heap = table_info_->table_;
+    TupleMeta inserted_tuple_meta;
+    while (child_executor_->Next(&child_tuple, rid)) {
+        /** Insert tuple into the table. */
+        inserted_tuple_meta.ts_ = 0;
+        inserted_tuple_meta.is_deleted_ = false;
 
-    /** Update the affected indexes. */
-    for (auto &affected_index : index_array_) {
-      affected_index->index_->InsertEntry(child_tuple.KeyFromTuple(table_info_->schema_, affected_index->key_schema_,
-                                                                   affected_index->index_->GetKeyAttrs()),
-                                          new_rid.value(), exec_ctx_->GetTransaction());
+        auto new_rid = table_heap->InsertTuple(inserted_tuple_meta, child_tuple, exec_ctx_->GetLockManager(),
+                                               exec_ctx_->GetTransaction(), table_info_->oid_);
+        if (new_rid == std::nullopt) {
+            continue;  // Skip this iteration if new_rid is nullopt
+        }
+
+        /** Update the affected indexes. */
+        for (auto &affected_index : index_array_) {
+            affected_index->index_->InsertEntry(child_tuple.KeyFromTuple(table_info_->schema_, affected_index->key_schema_,
+                                                                       affected_index->index_->GetKeyAttrs()),
+                                              new_rid.value(), exec_ctx_->GetTransaction());
+        }
+
+        row_amount_++;
     }
+    row_value_ = Value(INTEGER, row_amount_);
+    std::vector<Value> output{};
+    output.reserve(GetOutputSchema().GetColumnCount());
+    output.push_back(row_value_);
 
-    row_amount_++;
-  }
-  row_value_ = Value(INTEGER, row_amount_);
-  std::vector<Value> output{};
-  output.reserve(GetOutputSchema().GetColumnCount());
-  output.push_back(row_value_);
+    *tuple = Tuple{output, &GetOutputSchema()};
+    is_end_ = true;
 
-  *tuple = Tuple{output, &GetOutputSchema()};
-  is_end_ = true;
-
-  return true;
+    return true;
  }
 
 }  // namespace bustub
