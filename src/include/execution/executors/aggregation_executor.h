@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <iostream>
 
 #include "common/util/hash_util.h"
 #include "container/hash/hash_function.h"
@@ -72,13 +73,78 @@ class SimpleAggregationHashTable {
    */
   void CombineAggregateValues(AggregateValue *result, const AggregateValue &input) {
     for (uint32_t i = 0; i < agg_exprs_.size(); i++) {
+      auto &curr_value = result->aggregates_[i];
+      auto &input_value = input.aggregates_[i];
+      bool is_empty = curr_value.IsNull() && input_value.IsNull();
       switch (agg_types_[i]) {
         case AggregationType::CountStarAggregate:
-        case AggregationType::CountAggregate:
-        case AggregationType::SumAggregate:
-        case AggregationType::MinAggregate:
-        case AggregationType::MaxAggregate:
+          if (curr_value.CheckInteger()) {
+            curr_value = curr_value.Add(ValueFactory::GetIntegerValue(1));
+          }
           break;
+
+        case AggregationType::CountAggregate:
+          if (is_empty) {
+            break;
+          }
+          if (curr_value.CheckInteger()) {
+            if (!input_value.IsNull()) {
+              if (curr_value.IsNull()) {
+                curr_value = Value(INTEGER, 1);
+              } else {
+                curr_value = curr_value.Add(Value(INTEGER, 1));
+              }
+            }
+          }
+          break;
+
+        case AggregationType::SumAggregate: {
+          if (is_empty) {
+            curr_value = ValueFactory::GetNullValueByType(INTEGER);
+            break;
+          }
+          if (!input_value.IsNull()) {
+            if (curr_value.IsNull()) {
+              curr_value = input_value;
+            } else {
+              curr_value = curr_value.Add(input_value);
+            }
+          }
+          break;
+        }
+
+        case AggregationType::MinAggregate: {
+          if (is_empty) {
+            curr_value = ValueFactory::GetNullValueByType(INTEGER);
+            break;
+          }
+          if (!input_value.IsNull()) {
+            if (curr_value.IsNull()) {
+              curr_value = input_value;
+            } else {
+              curr_value = curr_value.Min(input_value);
+            }
+          }
+          break;
+        }
+
+        case AggregationType::MaxAggregate: {
+          if (is_empty) {
+            curr_value = ValueFactory::GetNullValueByType(INTEGER);
+            break;
+          }
+          if (!input_value.IsNull()) {
+            if (curr_value.IsNull()) {
+              curr_value = input_value;
+            } else {
+              curr_value = curr_value.Max(input_value);
+            }
+          }
+          break;
+        }
+
+        default:
+          std::cout << "Invalid\n";
       }
     }
   }
@@ -194,7 +260,7 @@ class AggregationExecutor : public AbstractExecutor {
     }
     return {vals};
   }
-
+  std::vector<Value> output_vals;
  private:
   /** The aggregation plan node */
   const AggregationPlanNode *plan_;
@@ -204,8 +270,12 @@ class AggregationExecutor : public AbstractExecutor {
 
   /** Simple aggregation hash table */
   // TODO(Student): Uncomment SimpleAggregationHashTable aht_;
+  SimpleAggregationHashTable aht_;
 
   /** Simple aggregation hash table iterator */
   // TODO(Student): Uncomment SimpleAggregationHashTable::Iterator aht_iterator_;
+  SimpleAggregationHashTable::Iterator aht_iterator_;
+  bool is_end;
+  bool special_case_end_;
 };
 }  // namespace bustub

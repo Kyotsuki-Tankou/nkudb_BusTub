@@ -128,13 +128,13 @@ auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
     inserted_tuple_meta.is_deleted_ = false;
 
     auto new_rid = table_heap->InsertTuple(inserted_tuple_meta, child_tuple, exec_ctx_->GetLockManager(),
-                                           exec_ctx_->GetTransaction(), table_info_->oid_);
+    exec_ctx_->GetTransaction(), table_info_->oid_);
     if (new_rid == std::nullopt) continue;
 
     for (auto &affected_index : index_array_) {
       affected_index->index_->InsertEntry(child_tuple.KeyFromTuple(table_info_->schema_, affected_index->key_schema_,
-                                                                   affected_index->index_->GetKeyAttrs()),
-                                          new_rid.value(), exec_ctx_->GetTransaction());
+      affected_index->index_->GetKeyAttrs()),
+      new_rid.value(), exec_ctx_->GetTransaction());
     }
     row_amount_++;
   }
