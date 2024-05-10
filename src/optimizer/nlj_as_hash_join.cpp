@@ -1,40 +1,9 @@
-// #include <algorithm>
-// #include <memory>
-// #include "catalog/column.h"
-// #include "catalog/schema.h"
-// #include "common/exception.h"
-// #include "common/macros.h"
-// #include "execution/expressions/column_value_expression.h"
-// #include "execution/expressions/comparison_expression.h"
-// #include "execution/expressions/constant_value_expression.h"
-// #include "execution/plans/abstract_plan.h"
-// #include "execution/plans/filter_plan.h"
-// #include "execution/plans/hash_join_plan.h"
-// #include "execution/plans/nested_loop_join_plan.h"
-// #include "execution/plans/projection_plan.h"
-// #include "optimizer/optimizer.h"
-// #include "type/type_id.h"
-
-// namespace bustub {
-
-// auto Optimizer::OptimizeNLJAsHashJoin(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef {
-//   // TODO(student): implement NestedLoopJoin -> HashJoin optimizer rule
-//   // Note for 2023 Fall: You should support join keys of any number of conjunction of equi-condistions:
-//   // E.g. <column expr> = <column expr> AND <column expr> = <column expr> AND ...
-//   return plan;
-// }
-
-// }  // namespace bustub
 #include <algorithm>
 #include <memory>
-#include <tuple>
-#include <utility>
-#include <vector>
 #include "catalog/column.h"
 #include "catalog/schema.h"
 #include "common/exception.h"
 #include "common/macros.h"
-#include "execution/expressions/abstract_expression.h"
 #include "execution/expressions/column_value_expression.h"
 #include "execution/expressions/comparison_expression.h"
 #include "execution/expressions/constant_value_expression.h"
@@ -47,81 +16,212 @@
 #include "optimizer/optimizer.h"
 #include "type/type_id.h"
 
+// namespace bustub {
+
+// auto Optimizer::OptimizeNLJAsHashJoin(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef {
+//   // TODO(student): implement NestedLoopJoin -> HashJoin optimizer rule
+//   // Note for 2023 Fall: You should support join keys of any number of conjunction of equi-condistions:
+//   // E.g. <column expr> = <column expr> AND <column expr> = <column expr> AND ...
+//   std::vector<AbstractPlanNodeRef> children;
+//   for (const auto &child : plan->GetChildren()) {
+//     children.push_back(OptimizeNLJAsHashJoin(child));
+//   }
+//   auto optimized_plan = plan->CloneWithChildren(std::move(children));
+
+//   if (plan->GetType() != PlanType::NestedLoopJoin) {
+//     return optimized_plan;
+//   }
+
+//   const auto &nlj_plan = dynamic_cast<const NestedLoopJoinPlanNode &>(*optimized_plan);
+
+//   BUSTUB_ENSURE(nlj_plan.children_.size() == 2, "NestedLoopJoin should have two children");
+
+//   auto output_schema = std::make_shared<const bustub::Schema>(nlj_plan.OutputSchema());
+
+//   if (const auto *expr = dynamic_cast<const ComparisonExpression *>(nlj_plan.Predicate().get()); expr != nullptr) {
+//     if (expr->comp_type_ == ComparisonType::Equal) {
+//       if (const auto *left_expr = dynamic_cast<const ColumnValueExpression *>(expr->children_[0].get());
+//           left_expr != nullptr) {
+//         if (const auto *right_expr = dynamic_cast<const ColumnValueExpression *>(expr->GetChildAt(1).get());
+//             right_expr != nullptr) {
+//           auto left_expr_tuple_0 = std::make_shared<ColumnValueExpression>(
+//               left_expr->GetTupleIdx(), left_expr->GetColIdx(), left_expr->GetReturnType());
+//           auto right_expr_tuple_0 = std::make_shared<ColumnValueExpression>(
+//               right_expr->GetTupleIdx(), right_expr->GetColIdx(), right_expr->GetReturnType());
+//           auto left_expr_tuples = std::vector<AbstractExpressionRef>{left_expr_tuple_0};
+//           auto right_expr_tuples = std::vector<AbstractExpressionRef>{right_expr_tuple_0};
+//           auto join_type = nlj_plan.GetJoinType();
+
+//           if (left_expr->GetTupleIdx() == 1 && right_expr->GetTupleIdx() == 0) {
+//             return std::make_shared<HashJoinPlanNode>(output_schema, nlj_plan.GetLeftPlan(), nlj_plan.GetRightPlan(),
+//                                                       right_expr_tuples, left_expr_tuples, join_type);
+//           }
+//           if (left_expr->GetTupleIdx() == 0 && right_expr->GetTupleIdx() == 1) {
+//             return std::make_shared<HashJoinPlanNode>(output_schema, nlj_plan.GetLeftPlan(), nlj_plan.GetRightPlan(),
+//                                                       left_expr_tuples, right_expr_tuples, join_type);
+//           }
+//         }
+//       }
+//     }
+//   } else if (const auto *expr = dynamic_cast<const LogicExpression *>(nlj_plan.Predicate().get());
+//              expr != nullptr && expr->logic_type_ == LogicType::And) {
+//     std::vector<AbstractExpressionRef> left_expr_tuples;
+//     std::vector<AbstractExpressionRef> right_expr_tuples;
+
+//     std::function<void(const LogicExpression *)> process_logic_expr;
+//     // for this lambda function, we are capturing by reference
+//     process_logic_expr = [&](const LogicExpression *logic_expr) {
+//       // printf("processing logic expression\n");
+//       if (const auto *left_logic_expr = dynamic_cast<const LogicExpression *>(logic_expr->GetChildAt(0).get());
+//           left_logic_expr != nullptr) {
+//         process_logic_expr(left_logic_expr);
+//       } else if (const auto *cmp_expr = dynamic_cast<const ComparisonExpression *>(logic_expr->GetChildAt(0).get());
+//                  cmp_expr != nullptr) {
+//         if (cmp_expr->comp_type_ == ComparisonType::Equal) {
+//           // printf("entering cmp expression\n");
+//           const auto *left_col_expr = dynamic_cast<const ColumnValueExpression *>(cmp_expr->GetChildAt(0).get());
+//           const auto *right_col_expr = dynamic_cast<const ColumnValueExpression *>(cmp_expr->GetChildAt(1).get());
+
+//           if (left_col_expr != nullptr && right_col_expr != nullptr) {
+//             auto left_expr_tuple = std::make_shared<ColumnValueExpression>(
+//                 left_col_expr->GetTupleIdx(), left_col_expr->GetColIdx(), left_col_expr->GetReturnType());
+//             auto right_expr_tuple = std::make_shared<ColumnValueExpression>(
+//                 right_col_expr->GetTupleIdx(), right_col_expr->GetColIdx(), right_col_expr->GetReturnType());
+
+//             if (left_col_expr->GetTupleIdx() == 0 && right_col_expr->GetTupleIdx() == 1) {
+//               left_expr_tuples.push_back(left_expr_tuple);
+//               right_expr_tuples.push_back(right_expr_tuple);
+//             } else if (left_col_expr->GetTupleIdx() == 1 && right_col_expr->GetTupleIdx() == 0) {
+//               left_expr_tuples.push_back(right_expr_tuple);
+//               right_expr_tuples.push_back(left_expr_tuple);
+//             }
+//           }
+//         }
+//       }
+
+//       // now process the right child
+//       if (const auto *right_logic_expr = dynamic_cast<const LogicExpression *>(logic_expr->GetChildAt(1).get());
+//           right_logic_expr != nullptr) {
+//         process_logic_expr(right_logic_expr);
+//       } else if (const auto *cmp_expr = dynamic_cast<const ComparisonExpression *>(logic_expr->GetChildAt(1).get());
+//                  cmp_expr != nullptr) {
+//         if (cmp_expr->comp_type_ == ComparisonType::Equal) {
+//           // printf("entering cmp expression again\n");
+//           const auto *left_col_expr = dynamic_cast<const ColumnValueExpression *>(cmp_expr->GetChildAt(0).get());
+//           const auto *right_col_expr = dynamic_cast<const ColumnValueExpression *>(cmp_expr->GetChildAt(1).get());
+
+//           if (left_col_expr != nullptr && right_col_expr != nullptr) {
+//             auto left_expr_tuple = std::make_shared<ColumnValueExpression>(
+//                 left_col_expr->GetTupleIdx(), left_col_expr->GetColIdx(), left_col_expr->GetReturnType());
+//             auto right_expr_tuple = std::make_shared<ColumnValueExpression>(
+//                 right_col_expr->GetTupleIdx(), right_col_expr->GetColIdx(), right_col_expr->GetReturnType());
+
+//             if (left_col_expr->GetTupleIdx() == 0 && right_col_expr->GetTupleIdx() == 1) {
+//               left_expr_tuples.push_back(left_expr_tuple);
+//               right_expr_tuples.push_back(right_expr_tuple);
+//             } else if (left_col_expr->GetTupleIdx() == 1 && right_col_expr->GetTupleIdx() == 0) {
+//               left_expr_tuples.push_back(right_expr_tuple);
+//               right_expr_tuples.push_back(left_expr_tuple);
+//             }
+//           }
+//         }
+//       }
+
+//       // printf("finished processing logic expression\n Left tuple size: %lu\n Right tuple size: %lu\n",
+//       // left_expr_tuples.size(), right_expr_tuples.size());
+//     };
+
+//     process_logic_expr(expr);
+
+//     // now that we have processed everything, we can create the plan node
+//     auto join_type = nlj_plan.GetJoinType();
+//     return std::make_shared<HashJoinPlanNode>(output_schema, nlj_plan.GetLeftPlan(), nlj_plan.GetRightPlan(),
+//                                               left_expr_tuples, right_expr_tuples, join_type);
+//   }
+//   return optimized_plan;
+// }
+
+// }  // namespace bustub
 namespace bustub {
-auto OptimizeSingleExpression(const ComparisonExpression *expr, const NestedLoopJoinPlanNode &nlj_plan,
-                              std::vector<AbstractExpressionRef> &left_exprs,
-                              std::vector<AbstractExpressionRef> &right_exprs) -> bool;
+
+std::shared_ptr<ColumnValueExpression> processExpression(const AbstractExpression *expr) {
+  if (const auto *col_expr = dynamic_cast<const ColumnValueExpression *>(expr); col_expr != nullptr) {
+    return std::make_shared<ColumnValueExpression>(
+        col_expr->GetTupleIdx(), col_expr->GetColIdx(), col_expr->GetReturnType());
+  }
+  return nullptr;
+}
+
+void processComparisonExpression(const ComparisonExpression *cmp_expr,
+                                 std::vector<AbstractExpressionRef> &left_expr_tuples,
+                                 std::vector<AbstractExpressionRef> &right_expr_tuples) {
+  if (cmp_expr->comp_type_ == ComparisonType::Equal) {
+    auto left_expr_tuple = processExpression(cmp_expr->GetChildAt(0).get());
+    auto right_expr_tuple = processExpression(cmp_expr->GetChildAt(1).get());
+
+    if (left_expr_tuple != nullptr && right_expr_tuple != nullptr) {
+      if (left_expr_tuple->GetTupleIdx() == 0 && right_expr_tuple->GetTupleIdx() == 1) {
+        left_expr_tuples.push_back(left_expr_tuple);
+        right_expr_tuples.push_back(right_expr_tuple);
+      } else if (left_expr_tuple->GetTupleIdx() == 1 && right_expr_tuple->GetTupleIdx() == 0) {
+        left_expr_tuples.push_back(right_expr_tuple);
+        right_expr_tuples.push_back(left_expr_tuple);
+      }
+    }
+  }
+}
+
+void processLogicExpression(const LogicExpression *logic_expr,
+                            std::vector<AbstractExpressionRef> &left_expr_tuples,
+                            std::vector<AbstractExpressionRef> &right_expr_tuples) {
+  if (logic_expr->logic_type_ == LogicType::And) {
+    if (const auto *left_logic_expr = dynamic_cast<const LogicExpression *>(logic_expr->GetChildAt(0).get());
+        left_logic_expr != nullptr) {
+      processLogicExpression(left_logic_expr, left_expr_tuples, right_expr_tuples);
+    } else if (const auto *cmp_expr = dynamic_cast<const ComparisonExpression *>(logic_expr->GetChildAt(0).get());
+               cmp_expr != nullptr) {
+      processComparisonExpression(cmp_expr, left_expr_tuples, right_expr_tuples);
+    }
+
+    if (const auto *right_logic_expr = dynamic_cast<const LogicExpression *>(logic_expr->GetChildAt(1).get());
+        right_logic_expr != nullptr) {
+      processLogicExpression(right_logic_expr, left_expr_tuples, right_expr_tuples);
+    } else if (const auto *cmp_expr = dynamic_cast<const ComparisonExpression *>(logic_expr->GetChildAt(1).get());
+               cmp_expr != nullptr) {
+      processComparisonExpression(cmp_expr, left_expr_tuples, right_expr_tuples);
+    }
+  }
+}
 
 auto Optimizer::OptimizeNLJAsHashJoin(const AbstractPlanNodeRef &plan) -> AbstractPlanNodeRef {
   std::vector<AbstractPlanNodeRef> children;
   for (const auto &child : plan->GetChildren()) {
-    children.emplace_back(OptimizeNLJAsHashJoin(child));
+    children.push_back(OptimizeNLJAsHashJoin(child));
   }
   auto optimized_plan = plan->CloneWithChildren(std::move(children));
 
-  if (optimized_plan->GetType() == PlanType::NestedLoopJoin) {
-    const auto &nlj_plan = dynamic_cast<const NestedLoopJoinPlanNode &>(*optimized_plan);
-    BUSTUB_ENSURE(nlj_plan.children_.size() == 2, "NLJ should have 2 children");
-
-    std::vector<AbstractExpressionRef> left_exprs;
-    std::vector<AbstractExpressionRef> right_exprs;
-    if (const auto *expr = dynamic_cast<const LogicExpression *>(nlj_plan.Predicate().get()); expr != nullptr) {
-      // Handle multiple equi-conditions
-      bool can_optimize = true;
-      for (const auto &child_expr : expr->children_) {
-        const auto *comp_expr = dynamic_cast<const ComparisonExpression *>(child_expr.get());
-        if (comp_expr == nullptr || !OptimizeSingleExpression(comp_expr, nlj_plan, left_exprs, right_exprs)) {
-          can_optimize = false;
-          break;
-        }
-      }
-      if (can_optimize) {
-        return std::make_shared<HashJoinPlanNode>(nlj_plan.output_schema_, nlj_plan.GetLeftPlan(),
-                                                  nlj_plan.GetRightPlan(), std::move(left_exprs),
-                                                  std::move(right_exprs), nlj_plan.GetJoinType());
-      }
-    } else if (const auto *expr = dynamic_cast<const ComparisonExpression *>(nlj_plan.Predicate().get());
-               expr != nullptr) {
-      if (OptimizeSingleExpression(expr, nlj_plan, left_exprs, right_exprs)) {
-        return std::make_shared<HashJoinPlanNode>(nlj_plan.output_schema_, nlj_plan.GetLeftPlan(),
-                                                  nlj_plan.GetRightPlan(), std::move(left_exprs),
-                                                  std::move(right_exprs), nlj_plan.GetJoinType());
-      }
-    }
+  if (plan->GetType() != PlanType::NestedLoopJoin) {
+    return optimized_plan;
   }
-  return optimized_plan;
-}
 
+  const auto &nlj_plan = dynamic_cast<const NestedLoopJoinPlanNode &>(*optimized_plan);
 
-auto OptimizeSingleExpression(const ComparisonExpression *expr, const NestedLoopJoinPlanNode &nlj_plan,
-                              std::vector<AbstractExpressionRef> &left_exprs,
-                              std::vector<AbstractExpressionRef> &right_exprs) -> bool {
-  if (expr->comp_type_ == ComparisonType::Equal) {
-    if (const auto *left_expr = dynamic_cast<const ColumnValueExpression *>(expr->children_[0].get());
-        left_expr != nullptr) {
-      if (const auto *right_expr = dynamic_cast<const ColumnValueExpression *>(expr->children_[1].get());
-          right_expr != nullptr) {
-        // Ensure both exprs have tuple_id == 0
-        auto left_expr_tuple_0 =
-            std::make_shared<ColumnValueExpression>(0, left_expr->GetColIdx(), left_expr->GetReturnType());
-        auto right_expr_tuple_0 =
-            std::make_shared<ColumnValueExpression>(0, right_expr->GetColIdx(), right_expr->GetReturnType());
-        // Now it's in form of <column_expr> = <column_expr>. Let's check if one of them is from the left table, and
-        // the other is from the right table.
-        if (left_expr->GetTupleIdx() == 0 && right_expr->GetTupleIdx() == 1) {
-          left_exprs.push_back(std::move(left_expr_tuple_0));
-          right_exprs.push_back(std::move(right_expr_tuple_0));
-          return true;
-        }
-        if (left_expr->GetTupleIdx() == 1 && right_expr->GetTupleIdx() == 0) {
-          right_exprs.push_back(std::move(left_expr_tuple_0));
-          left_exprs.push_back(std::move(right_expr_tuple_0));
-          return true;
-        }
-      }
-    }
+  BUSTUB_ENSURE(nlj_plan.children_.size() == 2, "NestedLoopJoin should have two children");
+
+  auto output_schema = std::make_shared<const bustub::Schema>(nlj_plan.OutputSchema());
+
+  std::vector<AbstractExpressionRef> left_expr_tuples;
+  std::vector<AbstractExpressionRef> right_expr_tuples;
+
+  if (const auto *expr = dynamic_cast<const ComparisonExpression *>(nlj_plan.Predicate().get()); expr != nullptr) {
+    processComparisonExpression(expr, left_expr_tuples, right_expr_tuples);
+  } else if (const auto *expr = dynamic_cast<const LogicExpression *>(nlj_plan.Predicate().get()); expr != nullptr) {
+    processLogicExpression(expr, left_expr_tuples, right_expr_tuples);
   }
-  return false;
+
+  auto join_type = nlj_plan.GetJoinType();
+  return std::make_shared<HashJoinPlanNode>(output_schema, nlj_plan.GetLeftPlan(), nlj_plan.GetRightPlan(),
+                                            left_expr_tuples, right_expr_tuples, join_type);
 }
 
 }  // namespace bustub
