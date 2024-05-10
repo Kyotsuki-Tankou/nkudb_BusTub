@@ -48,9 +48,14 @@ class SortExecutor : public AbstractExecutor {
 
   /** @return The output schema for the sort */
   auto GetOutputSchema() const -> const Schema & override { return plan_->OutputSchema(); }
-
+  auto cmp(const Tuple &a, const Tuple &b) -> bool;
  private:
   /** The sort plan node to be executed */
   const SortPlanNode *plan_;
+
+  std::unique_ptr<AbstractExecutor> child_executor_;
+  std::vector<Tuple> tuples_{};
+  std::vector<Tuple>::const_iterator table_iter_;
+  bool is_fill_;
 };
 }  // namespace bustub
