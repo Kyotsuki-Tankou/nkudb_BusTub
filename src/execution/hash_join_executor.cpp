@@ -110,7 +110,6 @@ auto HashJoinExecutor::Next(Tuple *tuple, RID *rid) -> bool {
       return true;
     }
   }
-  std::cerr << "unreachable code" << std::endl;
   return false;
 }
 
