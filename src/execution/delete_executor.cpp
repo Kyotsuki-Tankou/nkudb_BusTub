@@ -49,7 +49,7 @@ auto DeleteExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
       auto &index = index_info->index_;
       printf("delete index %s\n", index_info->name_.c_str());
       index->DeleteEntry(child_tuple.KeyFromTuple(table_info_->schema_, index_info->key_schema_, index->GetKeyAttrs()),
-                         *rid, exec_ctx_->GetTransaction());
+      *rid, exec_ctx_->GetTransaction());
       printf("delete index %s done\n", index_info->name_.c_str());
     }
 

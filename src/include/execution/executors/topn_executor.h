@@ -32,7 +32,7 @@ struct cmp_ {
       : order_by_(order_bys), schema_(schema) {}
 
   auto operator()(const Tuple &a, const Tuple &b) const -> bool {
-        bool equal = true;
+    bool equal = true;
     bool less = false;
     bool greater = false;
 
@@ -51,14 +51,13 @@ struct cmp_ {
           greater = !greater;
         }
       }
-      if (!equal)  break;
+      if (!equal) break;
     }
-    if (equal)  return equal;
-    if (less)  return less;
+    if (equal) return equal;
+    if (less) return less;
     return false;
   }
 };
-
 
 /**
  * The TopNExecutor executor executes a topn.

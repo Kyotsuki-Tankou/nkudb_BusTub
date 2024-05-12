@@ -146,15 +146,14 @@ namespace bustub {
 
 std::shared_ptr<ColumnValueExpression> processExpression(const AbstractExpression *expr) {
   if (const auto *col_expr = dynamic_cast<const ColumnValueExpression *>(expr); col_expr != nullptr) {
-    return std::make_shared<ColumnValueExpression>(
-        col_expr->GetTupleIdx(), col_expr->GetColIdx(), col_expr->GetReturnType());
+    return std::make_shared<ColumnValueExpression>(col_expr->GetTupleIdx(), col_expr->GetColIdx(),
+                                                   col_expr->GetReturnType());
   }
   return nullptr;
 }
 
 void processComparisonExpression(const ComparisonExpression *cmp_expr,
-                                 std::vector<AbstractExpressionRef> &left_expr_tuples,
-                                 std::vector<AbstractExpressionRef> &right_expr_tuples) {
+  std::vector<AbstractExpressionRef> &left_expr_tuples,std::vector<AbstractExpressionRef> &right_expr_tuples) {
   if (cmp_expr->comp_type_ == ComparisonType::Equal) {
     auto left_expr_tuple = processExpression(cmp_expr->GetChildAt(0).get());
     auto right_expr_tuple = processExpression(cmp_expr->GetChildAt(1).get());
@@ -171,15 +170,14 @@ void processComparisonExpression(const ComparisonExpression *cmp_expr,
   }
 }
 
-void processLogicExpression(const LogicExpression *logic_expr,
-                            std::vector<AbstractExpressionRef> &left_expr_tuples,
+void processLogicExpression(const LogicExpression *logic_expr, std::vector<AbstractExpressionRef> &left_expr_tuples,
                             std::vector<AbstractExpressionRef> &right_expr_tuples) {
   if (logic_expr->logic_type_ == LogicType::And) {
     if (const auto *left_logic_expr = dynamic_cast<const LogicExpression *>(logic_expr->GetChildAt(0).get());
-        left_logic_expr != nullptr) {
+      left_logic_expr != nullptr) {
       processLogicExpression(left_logic_expr, left_expr_tuples, right_expr_tuples);
     } else if (const auto *cmp_expr = dynamic_cast<const ComparisonExpression *>(logic_expr->GetChildAt(0).get());
-               cmp_expr != nullptr) {
+      cmp_expr != nullptr) {
       processComparisonExpression(cmp_expr, left_expr_tuples, right_expr_tuples);
     }
 
@@ -187,7 +185,7 @@ void processLogicExpression(const LogicExpression *logic_expr,
         right_logic_expr != nullptr) {
       processLogicExpression(right_logic_expr, left_expr_tuples, right_expr_tuples);
     } else if (const auto *cmp_expr = dynamic_cast<const ComparisonExpression *>(logic_expr->GetChildAt(1).get());
-               cmp_expr != nullptr) {
+      cmp_expr != nullptr) {
       processComparisonExpression(cmp_expr, left_expr_tuples, right_expr_tuples);
     }
   }
@@ -221,7 +219,7 @@ auto Optimizer::OptimizeNLJAsHashJoin(const AbstractPlanNodeRef &plan) -> Abstra
 
   auto join_type = nlj_plan.GetJoinType();
   return std::make_shared<HashJoinPlanNode>(output_schema, nlj_plan.GetLeftPlan(), nlj_plan.GetRightPlan(),
-                                            left_expr_tuples, right_expr_tuples, join_type);
+  left_expr_tuples, right_expr_tuples, join_type);
 }
 
 }  // namespace bustub

@@ -155,7 +155,9 @@ class HashJoinExecutor : public AbstractExecutor {
   // hash table for right executor
   std::unordered_multimap<HashJoinKey, Tuple, std::hash<HashJoinKey>> hjt_{};
   std::unordered_multimap<HashJoinKey, Tuple>::iterator hjt_iterator_;
-  std::pair<std::unordered_multimap<HashJoinKey, Tuple>::iterator, std::unordered_multimap<HashJoinKey, Tuple>::iterator> hjt_range_;
+  std::pair<std::unordered_multimap<HashJoinKey, Tuple>::iterator,
+            std::unordered_multimap<HashJoinKey, Tuple>::iterator>
+      hjt_range_;
   std::unique_ptr<AbstractExecutor> left_child_;
   std::unique_ptr<AbstractExecutor> right_child_;
   const Schema *const left_schema_;

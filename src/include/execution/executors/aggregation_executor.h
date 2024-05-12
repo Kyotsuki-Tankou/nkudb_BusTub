@@ -12,11 +12,11 @@
 
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <unordered_map>
 #include <utility>
 #include <vector>
-#include <iostream>
 
 #include "common/util/hash_util.h"
 #include "container/hash/hash_function.h"
@@ -64,6 +64,10 @@ class SimpleAggregationHashTable {
     return {values};
   }
 
+  auto GetAggregateValue(const AggregateKey &agg_key) const -> const AggregateValue & {
+    assert(ht_.count(agg_key) != 0);
+    return ht_.at(agg_key);
+  }
   /**
    * TODO(Student)
    *
@@ -261,6 +265,7 @@ class AggregationExecutor : public AbstractExecutor {
     return {vals};
   }
   std::vector<Value> output_vals;
+
  private:
   /** The aggregation plan node */
   const AggregationPlanNode *plan_;

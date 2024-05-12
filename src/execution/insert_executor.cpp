@@ -133,8 +133,7 @@ auto InsertExecutor::Next([[maybe_unused]] Tuple *tuple, RID *rid) -> bool {
 
     for (auto &affected_index : index_array_) {
       affected_index->index_->InsertEntry(child_tuple.KeyFromTuple(table_info_->schema_, affected_index->key_schema_,
-      affected_index->index_->GetKeyAttrs()),
-      new_rid.value(), exec_ctx_->GetTransaction());
+      affected_index->index_->GetKeyAttrs()),new_rid.value(), exec_ctx_->GetTransaction());
     }
     row_amount_++;
   }

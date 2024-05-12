@@ -117,7 +117,7 @@ bool NestedLoopJoinExecutor::LeftJoin(Tuple *tuple, RID *rid) {
       index_num_++;
       *tuple = Tuple(join_array, &GetOutputSchema());
       auto val = predicate_expr->EvaluateJoin(&outer_tuple_, left_executor_->GetOutputSchema(), &inner_tuple,
-      right_executor_->GetOutputSchema());
+                                              right_executor_->GetOutputSchema());
       if (!val.IsNull() && val.GetAs<bool>()) {
         is_match_ = true;
         *rid = tuple->GetRid();

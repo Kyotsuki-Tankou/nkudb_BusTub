@@ -4,13 +4,13 @@ namespace bustub {
 
 TopNExecutor::TopNExecutor(ExecutorContext *exec_ctx, const TopNPlanNode *plan,
                            std::unique_ptr<AbstractExecutor> &&child_executor)
-    : AbstractExecutor(exec_ctx),heap_(cmp_(plan->GetOrderBy(), plan->OutputSchema())) {
-        plan_=plan;
-        child_executor_=std::move(child_executor);
-        }
+    : AbstractExecutor(exec_ctx), heap_(cmp_(plan->GetOrderBy(), plan->OutputSchema())) {
+  plan_ = plan;
+  child_executor_ = std::move(child_executor);
+}
 
-void TopNExecutor::Init() { 
-    if (is_fill_) {
+void TopNExecutor::Init() {
+  if (is_fill_) {
     table_iter_ = tuples_.rbegin();
     num_in_heap_ = tuples_.size();
     return;
@@ -40,12 +40,13 @@ void TopNExecutor::Init() {
   num_in_heap_ = tuples_.size();
 }
 
-auto TopNExecutor::Next(Tuple *tuple, RID *rid) -> bool { 
-    if (table_iter_ == tuples_.rend())  return false;
+auto TopNExecutor::Next(Tuple *tuple, RID *rid) -> bool {
+  if (table_iter_ == tuples_.rend()) return false;
   *tuple = *table_iter_;
   table_iter_++;
   num_in_heap_--;
-  return true; }
+  return true;
+}
 
 auto TopNExecutor::GetNumInHeap() -> size_t { return num_in_heap_; };
 
